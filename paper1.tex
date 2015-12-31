@@ -1,0 +1,70 @@
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out if you need a4paper
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4 paper
+\IEEEoverridecommandlockouts                              % This command is only needed if 
+                                                          % you want to use the \thanks command
+\overrideIEEEmargins                                      % Needed to meet printer requirements.
+
+\title{\LARGE \bf
+  Longitudinal Trajectory Planning and Tracking for Fixed-Path Autonomous Driving
+}
+
+\author{
+  Robert G. Cofield $^{1}$,
+  Rakesh Gupta $^{2}$,
+  Ambarish Goswami $^{3}$,
+  and
+  David Bevly $^{4}$
+  \thanks{
+    * This work is supported by Honda Research Institute USA.
+  }
+  \thanks{
+    $^{1}$ Robert G. Cofield is a graduate researcher at Auburn University's GPS \& Vehicle Dynamics Laboratory.
+  }
+  \thanks{
+    $^{2}$ Rakesh Gupta ...
+  }
+  \thanks{
+    $^{3}$ Ambarish Goswami ... 
+  }
+  \thanks{
+    $^{4}$ David Bevly ...
+  }
+}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+
+When operating an autonomous ground vehicle on roadways, it is common to employ the path-velocity decomposition (i.e., path planning is performed prior to planning the speed that the vehicle will take along the chosen path).
+Given a desired path, we present a novel method of planning longitudinal trajectories (i.e., the time derivatives of position in the body-forward direction) along that path.
+This method first segments the path using an arbitrary set of kinematic or dynamic constaints.
+Each segement is then planned sequentially by choosing a piecewise constant jerk profile.
+The jerk profile is intelligently chosen from a set of pre-solved profiles such that acceleration is continuous throughout the entire path.
+The resultant trajectory plan can then be easily sampled to provide a reference for real-time vehicle control.
+This method is shown to be efficient and reliable for use in online planning with a test vehicle.
+
+\end{abstract}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+
+asdf
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\end{document}
