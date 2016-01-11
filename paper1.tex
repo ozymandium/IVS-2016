@@ -64,7 +64,8 @@ This method is shown to be efficient and reliable for use in online planning wit
 ... autonomous vehicles ... \emph{The 1st sentence is the hardest}.
 One such task is computing a tentative reference trajectory plan for travelling from one point to another.
 While the set of possible paths between any two points is infinite, it is typically heavily restricted by consideration of constraints such as traversability and legally available travel lanes, among others.
-The intended speed, acceleration, and higher derivates of position with respect to time are also subject to constraints. These may include legal speed limits, engine dynamics, desired sideslip limits, tractions availability, and rollover concerns.
+The intended speed, acceleration, and higher derivates of position with respect to time are also subject to constraints.
+These may include legal speed limits, engine dynamics, desired sideslip limits, traction availability, and rollover concerns.
 
 % intersection of path-planning constraints and speed-planning constraints is vehicle dynamics
 
@@ -77,13 +78,16 @@ The intended speed, acceleration, and higher derivates of position with respect 
 % 
 
 % tracking
-Once a trajectory plan is formulated, it must be utilized online in order for a reference signal to be sent to the controllers which govern steering, braking, and engine speed. This is the trajectory tracking problem.
+Once a trajectory plan is formulated, it must be utilized online in order for a reference signal to be sent to the controllers which govern steering, braking, and engine speed.
+This is the trajectory tracking problem.
 
 % mention using same cuvilinear cs scheme to project onto path
 
 \section{Trajectory Planning}
 
-asdf
+For the purposes of this work, the objective of trajectory planning is to take a 2 dimensional (horizontal plane) path, and compute a series of constant jerk intervals for motion along the length of the path which is time optimal yet still falls within constraints on speed, acceleration, and jerk. Additionally, prescribed initial and end conditions for position, speed, and acceleration must also be honored. 
+
+
 
 \section{Trajectory Tracking}
 
