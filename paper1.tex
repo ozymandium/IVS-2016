@@ -4,6 +4,10 @@
                                                           % you want to use the \thanks command
 \overrideIEEEmargins                                      % Needed to meet printer requirements.
 
+\usepackage[pdftex]{graphicx}
+\usepackage[hypcap]{caption}
+\usepackage[noadjust]{cite}
+
 \title{\LARGE \bf
   Longitudinal Trajectory Planning and Tracking for Fixed-Path Autonomous Driving
 }
@@ -30,9 +34,6 @@
     $^{4}$ David Bevly ...
   }
 }
-
-\usepackage[pdftex]{graphicx}
-\usepackage[hypcap]{caption}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -108,6 +109,9 @@ This means that the desired trajectory plan is one dimensional, so using curvili
   \label{fig:7phaseprofile}
 \end{figure}
 
+\subsection{Jerk Profiles}
+\label{sec:jerkprofiles}
+
 Consider, as a starting point, the case in which a vehicle is at rest and needs to accelerate to some travelling speed, maintain that speed for some distance, then brake to a stop at a prescribed end location.
 Figure \ref{fig:7phaseprofile} shows this trajectory over time.
 The problem is defined by the vector of known values $\bar{G}  = [v_i, v_f, L, v_m]$, being initial speed, final speed, the total distance, and the speed limit, respectively.
@@ -121,22 +125,20 @@ It is obvious that there are many cases in which this solution will fail.
 For instance, if $L$ is sufficiently short and $v_m$ is sufficiently high, then it will not be possible to ever reach $v_m$ with realistic values of $\bar{a}_m$ and $\bar{j}_m$.
 The authors then propose that 4 other basic profiles be defined, and an algorithm constructed which judiciously chooses the appropriate profile for every segment defined by a vector $\bf{G}$.
 The other profiles are explained below in section \ref{sec:jerkprofiles}.
-A path is then a set of $N$ segments, each of which is defined by a set of parameters $G_i, i = 1 ... N$ and can be solved indivually in sequence.
+A path is then a set of $N_s$ segments, each of which is defined by a set of parameters $G_k, k = 1 ... N_s$ and can be solved indivually in sequence.
 Determination of where to break a path into segments is discussed below in Section \ref{sec:pathsegmentation}.
-
-\subsection{Jerk Profiles}
-\label{sec:jerkprofiles}
 
 There are a total of five potential jerk profiles which have been created to cover all feasible values in $\bar{G}$. All impossible scenarios are automatically ruled out.
 
 \subsubsection{6 Phase}
 \label{sec:6phase}
 
-The case mentioned above wherein the speed limit is too high for a solution to exist for a 7 phase profile. The middle travel period is removed, so that the vehicle increases speed and then immediately decreases speed. The peak speed in this case has a solution, but cannot be manipulated directly.
+In the case mentioned above, wherein the speed limit is too high for a solution to exist for a 7 phase profile, The middle travel period is removed, so that the vehicle increases speed and then immediately decreases speed. 
+The peak speed in this case has a solution, but cannot be manipulated directly.
 
 \begin{figure}[thpb]
   \centering
-  \includegraphics[width=0.6\columnwidth]{graphics/6phase_v(s).png}
+  \includegraphics[width=0.7\columnwidth]{graphics/6phase_v(s).png}
   \caption{6 phase profile, displayed as speed vs. position along path}
   \label{fig:6phaseprofile}
 \end{figure}
@@ -148,7 +150,7 @@ When $v_i < v_m \simeq v_f$, the vehicle should increase speed, then maintain th
 
 \begin{figure}[thpb]
   \centering
-  \includegraphics[width=0.6\columnwidth]{graphics/4phase_v(s).png}
+  \includegraphics[width=0.7\columnwidth]{graphics/4phase_v(s).png}
   \caption{4 phase profile, displayed as speed vs. position along path.}
   \label{fig:4phaseprofile}
 \end{figure}
@@ -156,11 +158,12 @@ When $v_i < v_m \simeq v_f$, the vehicle should increase speed, then maintain th
 \subsubsection{Reversed 4 Phase}
 \label{sec:reversed4phase}
 
-When $v_i \simeq v_m > v_f$, it would be nonsensical to immediately brake. The initial speed is maintained for a period before applying the brakes.
+When $v_i \simeq v_m > v_f$, it would be nonsensical to immediately brake.
+The initial speed is maintained for a period before applying the brakes.
 
 \begin{figure}[thpb]
   \centering
-  \includegraphics[width=0.6\columnwidth]{graphics/4Rphase_all_derivatives.png}
+  \includegraphics[width=0.7\columnwidth]{graphics/4Rphase_all_derivatives.png}
   \caption{Reversed 4 phase profile, displayed as speed vs. position along path.}
   \label{fig:4rphaseprofile}
 \end{figure}
@@ -168,21 +171,31 @@ When $v_i \simeq v_m > v_f$, it would be nonsensical to immediately brake. The i
 \subsubsection{3 Phase}
 \label{sec:3phase}
 
-A change from one speed to another. This presents a difficulty in that either $L$ or $v_f$ may be enforced, but not both (there is no solution to enforce both). As such, this profile is chosen for a segment in which it is impossible to completely arrive at the end speed given the initial speed. 
+A change from one speed to another. 
+This presents a difficulty in that either $L$ or $v_f$ may be enforced, but not both (there is no solution to enforce both).
+As such, this profile is chosen for a segment in which it is impossible to completely arrive at the end speed given the initial speed. 
 
 \begin{figure}[thpb]
   \centering
-  \includegraphics[width=0.6\columnwidth]{graphics/3phase_v(s).png}
+  \includegraphics[width=0.7\columnwidth]{graphics/3phase_v(s).png}
   \caption{3 phase profile, displayed as speed vs. position along path.}
   \label{fig:3phaseprofile}
 \end{figure}
 
+To decide which profile to employ, a cascade approach is used. Analytic values of time intervals are evaluated for each profile by plugging in values of $\bar{G}$, $\bar{a}_m$, and $\bar{j}_m$ until all time intervals are positive and real. 
+The order in which they are attempted is: 7 $\rightarrow$ 6 $\rightarrow$ 4 $\rightarrow$ 4R $\rightarrow$ 3.
 
 \subsection{Path Segmentation}
 \label{sec:pathsegmentation}
 
 % make sure to incorporate extensibility to other constraints
-asdf
+The goal of the segmentation process is to divide a given path into multiple portions where each has a uniform upper limit on speed, acceleration, and braking.
+After this is done, the process described above in Section \ref{sec:jerkprofiles} may be applied to each of the segments.
+
+To begin, 5 values must be computed for each point in the planned path consisting of $N_p$ points: $v_{m,k}$, $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ for $k = 1, ... N_p$ . Each value is a minimax, i.e., a minimum of several maxima computed from various constraints. For instance, ...
+
+For the purposes of this work, two constraints are used for $v_m$: legal speed limit (set constant for the whole path) and lateral acceleration limit. Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$. For each path point, the value $v_{m,k}(a_{B,y})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$. The value $\kappa_k$ denotes the path curvature at each point. For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are all set constant for the entire path, using recommendations from \cite{Maurya2012}
+An arbitrary set of constraints may 
 
 \section{Trajectory Tracking}
 \label{sec:trajectorytracking}
@@ -192,6 +205,8 @@ asdf
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\bibliography{HRI_internship_trajectory_planner_articles}
+\bibliographystyle{IEEEtran}
 
 
 \end{document}
