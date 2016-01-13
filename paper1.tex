@@ -61,8 +61,7 @@ This method is shown to be efficient and reliable for use in online planning wit
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Introduction}
-\label{sec:introduction}
+\section{Introduction} \label{sec:introduction}
 
 ... autonomous vehicles ... \emph{The 1st sentence is the hardest}.
 One such task is computing a tentative reference trajectory plan for travelling from one point to another.
@@ -90,17 +89,13 @@ This is the trajectory tracking problem, which is discussed in Section \ref{sec:
 
 % mention using same cuvilinear cs scheme to project onto path
 
-\section{Trajectory Planning}
-\label{sec:trajectoryplanning}
+\section{Trajectory Planning} \label{sec:trajectoryplanning}
 
 For the purposes of this work, the objective of trajectory planning is to take a 2 dimensional (horizontal plane) path, and compute a series of constant jerk intervals for motion along the length of the path which is time optimal yet still falls within constraints on speed, acceleration, and jerk.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
 It is assumed that the path planner operates independently from the trajectory planner and tracker.
 Prescribed initial and end conditions for position, speed, and acceleration must also be honored. 
 This means that the desired trajectory plan is one dimensional, so using curvilinear coordinates will significantly simplify the solution.
-
-% Need some lead in here?
-% \subsection{Simple Case}
 
 \begin{figure}[thpb]
   \centering
@@ -109,8 +104,7 @@ This means that the desired trajectory plan is one dimensional, so using curvili
   \label{fig:7phaseprofile}
 \end{figure}
 
-\subsection{Jerk Profiles}
-\label{sec:jerkprofiles}
+\subsection{Jerk Profiles} \label{sec:jerkprofiles}
 
 Consider, as a starting point, the case in which a vehicle is at rest and needs to accelerate to some travelling speed, maintain that speed for some distance, then brake to a stop at a prescribed end location.
 Figure \ref{fig:7phaseprofile} shows this trajectory over time.
@@ -130,8 +124,7 @@ Determination of where to break a path into segments is discussed below in Secti
 
 There are a total of five potential jerk profiles which have been created to cover all feasible values in $\bf{b}$. All impossible scenarios are automatically ruled out.
 
-\subsubsection{6 Phase}
-\label{sec:6phase}
+\subsubsection{6 Phase} \label{sec:6phase}
 
 In the case mentioned above, the speed limit is too high for a solution to exist for a 7 phase profile.
 The middle travel period is removed, so that the vehicle increases speed and then immediately decreases speed. 
@@ -144,8 +137,7 @@ The peak speed in this case has a solution, but cannot be manipulated directly.
   \label{fig:6phaseprofile}
 \end{figure}
 
-\subsubsection{4 Phase}
-\label{sec:4phase}
+\subsubsection{4 Phase} \label{sec:4phase}
 
 When $v_i < v_m \simeq v_f$, the vehicle should increase speed, then maintain that speed for the distance remaining in the segment.
 
@@ -156,8 +148,7 @@ When $v_i < v_m \simeq v_f$, the vehicle should increase speed, then maintain th
   \label{fig:4phaseprofile}
 \end{figure}
 
-\subsubsection{Reversed 4 Phase}
-\label{sec:reversed4phase}
+\subsubsection{Reversed 4 Phase} \label{sec:reversed4phase}
 
 When $v_i \simeq v_m > v_f$, it would be nonsensical to immediately brake.
 The initial speed is maintained for a period before applying the brakes.
@@ -169,8 +160,7 @@ The initial speed is maintained for a period before applying the brakes.
   \label{fig:4rphaseprofile}
 \end{figure}
 
-\subsubsection{3 Phase}
-\label{sec:3phase}
+\subsubsection{3 Phase} \label{sec:3phase}
 
 A change from one speed to another. 
 This presents a difficulty in that either $L$ or $v_f$ may be enforced, but not both (there is no solution to enforce both).
@@ -187,13 +177,12 @@ To decide which profile to employ, a cascade approach is used.
 Analytic values of time intervals are evaluated for each profile by plugging in values of $\bf{b}$, $\bf{a}_m$, and $\bf{j}_m$ until all time intervals are positive and real. 
 The order in which they are attempted is: 7 $\rightarrow$ 6 $\rightarrow$ 4 $\rightarrow$ 4R $\rightarrow$ 3.
 
-\subsection{Path Segmentation}
-\label{sec:pathsegmentation}
+\subsection{Path Segmentation} \label{sec:pathsegmentation}
 
 % make sure to incorporate extensibility to other constraints
 The goal of the segmentation process is to divide a given path into multiple portions where each has a uniform upper limit on speed, acceleration, and braking.
 There are 3 steps in the segmentation process:
-\begin{enumerate}
+\begin{enumerate} \label{asdf}
   \item \emph{Ceiling calculation}, where $\bf{b}$, $\bf{a}_m$, and $\bf{j}_m$ are found for every point in the given path.
   \item \emph{Clustering}, in which path points are grouped sequentially.
   \item \emph{Consolidation}, in which a single $\bf{b}$, $\bf{a}_m$, and $\bf{j}_m$ is selected for each segment.
@@ -215,34 +204,40 @@ Any number of clustering algorithms may be used here, and prudent choice of segm
 For the present example, we will choose a simple univariate heuristic which essentially identifies curves in the roadway.
 Each time that $v_{m,k} < SL$ becomes true, a curve is beginning, and a segment boundary is drawn.
 Each time that $v_{m,k} = SL$ is once again true, the current curve has ended, and another segment boundary is drawn.
-Figure~\ref{fig:course_highlight_turns} shows the result of this algorithm. 
+Figure \ref{fig:course_highlight_turns} shows the result of this algorithm. 
 
 \begin{figure}[thpb]
-  \label{fig:course_highlight_turns}
   \centering
   \includegraphics[width=\columnwidth]{graphics/course_highlighted_turns.png}
   \caption{Clustering output for a short path when using an algorithm which draws segment boundaries around curves.}
+  \label{fig:course_highlight_turns}
 \end{figure}
 
-In the consolidation step, ...
+In the consolidation step, a single $\bf{g}$ must be calculated for each segment using the values of $\bf{g}$ corresponding to each of the path points which comprise the segment in question.
 
 \begin{figure}[thpb]
-  \label{fig:consolidation_speed_ceiling}
   \centering
   \includegraphics[width=\columnwidth]{graphics/speed_ceiling.png}
+  \caption{Example of $v_m$ consolidation for simple univariate path clustering.}
+  \label{fig:consolidation_speed_ceiling}
 \end{figure}
 
 The power of this algorithm is that any set and number of constraints may be used ... \emph{etc., etc., ...}
 
-\section{Trajectory Tracking}
-\label{sec:trajectorytracking}
+\section{Trajectory Tracking} \label{sec:trajectorytracking}
 
-asdf
+After planning has been performed, a reference signal must be regularly supplied to a control system in order for the vehicle to carry out the plan.
+This is known as tracking.
+The primary difficulty here is that the trajectory plan has been developed in a one dimensional position space using a reference time which will have unknown drift relative to real time.
+As such, we must find some way to look up the coordinates of the vehicle within the reference trajectory using information typically available for autonomous cars.
+A minimal set of such information would include position, velocity vector, heading, and acceleration in the body frame.
+After this, it is assumed that the vehicle controller will need samples of a small window into the future trajectory in order to pilot the vehicle.
+
+
 
 \section*{Acknowledgments}
 
-Thanks.
-
+Thanks...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
