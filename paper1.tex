@@ -5,7 +5,7 @@
 \overrideIEEEmargins                                      % Needed to meet printer requirements.
 
 \usepackage[pdftex]{graphicx}
-\usepackage[hypcap]{caption}
+% \usepackage[hypcap]{caption}
 \usepackage[noadjust]{cite}
 
 \title{\LARGE \bf
@@ -194,7 +194,7 @@ After this is done, the process described above in Section \ref{sec:jerkprofiles
 
 To begin, 5 values must be computed for each point in the planned path consisting of $N_p$ points: $v_{m,k}$, $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ for $k = 1, ... N_p$ . Each value is a minimax, i.e., a minimum of several maxima computed from various constraints. For instance, ...
 
-For the purposes of this work, two constraints are used for $v_m$: legal speed limit (set constant for the whole path) and lateral acceleration limit. Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$. For each path point, the value $v_{m,k}(a_{B,y})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$. The value $\kappa_k$ denotes the path curvature at each point. For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are all set constant for the entire path, using recommendations from \cite{Maurya2012}
+For the purposes of this work, two constraints are used for $v_m$: legal speed limit (set constant for the whole path) and lateral acceleration limit. Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$. For each path point, the value $v_{m,k}(a_{B,y})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$. The value $\kappa_k$ denotes the path curvature at each point. For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are all set constant for the entire path, using recommendations from ~\cite{Maurya2012}
 An arbitrary set of constraints may 
 
 \section{Trajectory Tracking}
@@ -202,11 +202,14 @@ An arbitrary set of constraints may
 
 asdf
 
+\section*{Acknowledgments}
+
+Thanks.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\bibliography{HRI_internship_trajectory_planner_articles}
 \bibliographystyle{IEEEtran}
-
+\bibliography{HRI_internship_trajectory_planner_articles}
 
 \end{document}
