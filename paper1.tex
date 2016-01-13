@@ -177,6 +177,8 @@ To decide which profile to employ, a cascade approach is used.
 Analytic values of time intervals are evaluated for each profile by plugging in values of $\bf{b}$, $\bf{a}_m$, and $\bf{j}_m$ until all time intervals are positive and real. 
 The order in which they are attempted is: 7 $\rightarrow$ 6 $\rightarrow$ 4 $\rightarrow$ 4R $\rightarrow$ 3.
 
+\emph{Put kinematic equations here? Many are extrememly large, and I don't have the code.}
+
 \subsection{Path Segmentation} \label{sec:pathsegmentation}
 
 % make sure to incorporate extensibility to other constraints
@@ -197,7 +199,6 @@ For the purposes of developing a simple example application, two constraints wil
 Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$.
 For each path point, the value $v_{m,k}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$.
 The value $\kappa_k$ denotes the path curvature at each point.
-For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
 
 This information is used to choose the segment boundaries in the clustering step.
 Any number of clustering algorithms may be used here, and prudent choice of segment boundaries is arguably one of the most critical pieces of trajectory planning process.
@@ -208,21 +209,32 @@ Figure \ref{fig:course_highlight_turns} shows the result of this algorithm.
 
 \begin{figure}[thpb]
   \centering
-  \includegraphics[width=\columnwidth]{graphics/course_highlighted_turns.png}
+  \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
   \caption{Clustering output for a short path when using an algorithm which draws segment boundaries around curves.}
   \label{fig:course_highlight_turns}
 \end{figure}
 
-In the consolidation step, a single $\bf{g}$ must be calculated for each segment using the values of $\bf{g}$ corresponding to each of the path points which comprise the segment in question.
+% need better notation here.
+In the consolidation step, a single set of $\bf{g}$, $\bf{a}_m$, and $\bf{j}_m$ must be calculated for each segment using the values corresponding to each of the path points which comprise the segment in question.
+The minimum of scalar across all constituent points is chosen.
+While not time optimal, it does ensure that no constraints are violated while still keeping the number of total segments low.
+In the present example, this means that in the straight portions of the path $v_m = SL$ and in the curves $v_m$ is set to the value required to obtain $a_{B,y}^{max}$ for the entireity of the curve.
+As a result, many of the curves will have a constant speed.
+For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
 
 \begin{figure}[thpb]
   \centering
-  \includegraphics[width=\columnwidth]{graphics/speed_ceiling.png}
+  \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
   \caption{Example of $v_m$ consolidation for simple univariate path clustering.}
   \label{fig:consolidation_speed_ceiling}
 \end{figure}
 
-The power of this algorithm is that any set and number of constraints may be used ... \emph{etc., etc., ...}
+The power of this algorithm is that any set and number of constraints may be used ... \emph{etc., etc., ...}\tabularnewline
+
+\subsection{Unification} \label{sec:unification}
+
+At this point, the path has been divided into segments and conditions have been computed such that an analytically derived plan can be fit to each segment individually.
+Now a reference trajectory must be generated for the entire path.
 
 \section{Trajectory Tracking} \label{sec:trajectorytracking}
 
@@ -232,6 +244,24 @@ The primary difficulty here is that the trajectory plan has been developed in a 
 As such, we must find some way to look up the coordinates of the vehicle within the reference trajectory using information typically available for autonomous cars.
 A minimal set of such information would include position, velocity vector, heading, and acceleration in the body frame.
 After this, it is assumed that the vehicle controller will need samples of a small window into the future trajectory in order to pilot the vehicle.
+
+The general idea will be to project the vehicle's current position onto the path then find the cumulative distance along the path between the start point and the projection point.
+This will be the 1D location corresponding to the vehicle's current reference time.
+Once this reference time is obtained, it may be used to look up position, speed, acceleration, and jerk along the curve of the path over the future time window.
+From there it is a matter of simple geometry to transform these values into the coordinate system of the path and, subsequently, any other coordinate system which may be needed.
+
+% \subsection{Path Projection} \label{sec:pathprojection}
+
+Several algorithms exist to find the optimal projection of the target vehicle's present kinematic state (position, velocity, and acceleration vectors) onto the path.
+A simple approximation, which works well for the path shown in Figure~\ref{fig:course_highlight_turns} is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a ``link''.
+Projections which lie outside of the link's two constituent path points are snapped to that which is nearest.
+The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection.
+Any number of modifications can be made using heading, velocity vectors, and previous information to allow this method to be extended to complex paths which overlap or self-intersect.
+
+Choosing an algorithm to obtain the current position of the vehicle along the length of the path (i.e., in the same one-dimensional coordinate system that planning was performed) is influenced by the form of the path plan.
+Assuming that the path is linear between waypoints reduces computational effort significantly, but the error in this approximation approaches zero as the spacing between points approaches zero.
+Other approximations which work well include cubic splines, arc splines, and Bezier curves, which have solutions for closest point projection and arc-length calculation~\cite{Wang2002,Wang2003,Schindler2011}.
+For this work, we will examine using the linear approximation between waypoints, meaning that the 1D position of the vehicle at any epoch is the sum of the link lengths behind it's perpendicular projection.
 
 
 

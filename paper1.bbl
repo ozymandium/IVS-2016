@@ -37,4 +37,24 @@ G.~Long, ``{Acceleration Characteristics of Starting Vehicles},''
   Board}, vol. 1737, no.~00, pp. 58--70, jan 2000.
 \BIBentrySTDinterwordspacing
 
+\bibitem{Wang2002}
+\BIBentryALTinterwordspacing
+H.~Wang, J.~Kearney, and K.~Atkinson, ``{Robust and efficient computation of
+  the closest point on a spline curve},'' \emph{Proceedings of the 5th
+  {\ldots}}, pp. 397--405, 2002.
+\BIBentrySTDinterwordspacing
+
+\bibitem{Wang2003}
+------, ``{Arc-Length Parameterized Spline Curves for Real-Time Simulation},''
+  \emph{Curve and surface design: Saint-Malo 2002.}, pp. 387--396, 2003.
+
+\bibitem{Schindler2011}
+\BIBentryALTinterwordspacing
+A.~Schindler, G.~Maier, and S.~Pangerl, ``{Exploiting arc splines for digital
+  maps},'' in \emph{2011 14th International IEEE Conference on Intelligent
+  Transportation Systems (ITSC)}.\hskip 1em plus 0.5em minus 0.4em\relax IEEE,
+  oct 2011, pp. 1--6. [Online]. Available:
+  \url{http://ieeexplore.ieee.org/lpdocs/epic03/wrapper.htm?arnumber=6082800}
+\BIBentrySTDinterwordspacing
+
 \end{thebibliography}

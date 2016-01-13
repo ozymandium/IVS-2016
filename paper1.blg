@@ -13,44 +13,44 @@ Database file #1: HRI_internship_trajectory_planner_articles.bib
 -- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
 
 Done.
-You've used 3 entries,
+You've used 6 entries,
             3973 wiz_defined-function locations,
-            822 strings with 7919 characters,
-and the built_in function-call counts, 2275 in all, are:
-= -- 201
-> -- 31
-< -- 23
-+ -- 18
-- -- 4
-* -- 121
-:= -- 387
-add.period$ -- 6
-call.type$ -- 3
-change.case$ -- 3
-chr.to.int$ -- 42
-cite$ -- 3
-duplicate$ -- 163
-empty$ -- 155
-format.name$ -- 5
-if$ -- 497
+            845 strings with 8609 characters,
+and the built_in function-call counts, 4749 in all, are:
+= -- 400
+> -- 90
+< -- 46
++ -- 50
+- -- 13
+* -- 241
+:= -- 749
+add.period$ -- 13
+call.type$ -- 6
+change.case$ -- 6
+chr.to.int$ -- 102
+cite$ -- 6
+duplicate$ -- 337
+empty$ -- 351
+format.name$ -- 17
+if$ -- 1069
 int.to.chr$ -- 0
-int.to.str$ -- 3
-missing$ -- 25
-newline$ -- 33
-num.names$ -- 3
-pop$ -- 33
+int.to.str$ -- 6
+missing$ -- 53
+newline$ -- 46
+num.names$ -- 6
+pop$ -- 102
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 2
-skip$ -- 174
+skip$ -- 358
 stack$ -- 0
-substring$ -- 105
-swap$ -- 148
-text.length$ -- 9
+substring$ -- 248
+swap$ -- 292
+text.length$ -- 12
 text.prefix$ -- 0
 top$ -- 5
 type$ -- 0
 warning$ -- 0
-while$ -- 12
-width$ -- 4
-write$ -- 56
+while$ -- 27
+width$ -- 7
+write$ -- 88
