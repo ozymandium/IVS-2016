@@ -79,13 +79,13 @@ These may include legal speed limits, engine dynamics, desired sideslip limits, 
 % mention using curvilinear CS
 % 
 
-Paragraphs here
-
-Paragraphs here
+Lit review...
 
 % tracking
 Once a trajectory plan is formulated, it must be utilized online in order for a reference signal to be sent to the controllers which govern steering, braking, and engine speed.
 This is the trajectory tracking problem, which is discussed in Section \ref{sec:trajectorytracking}.
+
+How is this different from the others ...
 
 % mention using same cuvilinear cs scheme to project onto path
 
@@ -235,6 +235,14 @@ The power of this algorithm is that any set and number of constraints may be use
 
 At this point, the path has been divided into segments and conditions have been computed such that an analytically derived plan can be fit to each segment individually.
 Now a reference trajectory must be generated for the entire path.
+Continuity of position, speed, and acceleration is the primary goal of this process.
+
+A jerk vs. time profile is fit to each segment using the algorithm in Section \ref{sec:jerkprofiles}.
+The value of $a_i$ for the first segment is set to be the value which is currently reported from sensor data.
+Since the final acceleration is set to zero for all profiles, each subsequent segment may begin with $a_i = 0$.
+
+% talk about control points
+
 
 \section{Trajectory Tracking} \label{sec:trajectorytracking}
 
@@ -255,13 +263,21 @@ From there it is a matter of simple geometry to transform these values into the 
 Several algorithms exist to find the optimal projection of the target vehicle's present kinematic state (position, velocity, and acceleration vectors) onto the path.
 A simple approximation, which works well for the path shown in Figure~\ref{fig:course_highlight_turns} is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a ``link''.
 Projections which lie outside of the link's two constituent path points are snapped to that which is nearest.
-The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection.
+The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection $\bf{r}_p$.
 Any number of modifications can be made using heading, velocity vectors, and previous information to allow this method to be extended to complex paths which overlap or self-intersect.
 
-Choosing an algorithm to obtain the current position of the vehicle along the length of the path (i.e., in the same one-dimensional coordinate system that planning was performed) is influenced by the form of the path plan.
-Assuming that the path is linear between waypoints reduces computational effort significantly, but the error in this approximation approaches zero as the spacing between points approaches zero.
-Other approximations which work well include cubic splines, arc splines, and Bezier curves, which have solutions for closest point projection and arc-length calculation~\cite{Wang2002,Wang2003,Schindler2011}.
-For this work, we will examine using the linear approximation between waypoints, meaning that the 1D position of the vehicle at any epoch is the sum of the link lengths behind it's perpendicular projection.
+Choosing an algorithm to obtain the current one dimensional position of the vehicle along the length of the path $s_{veh}$ (i.e., in the same one-dimensional coordinate system that planning was performed) is influenced by the form of the path plan.
+Assuming that the path is linear between waypoints reduces computational effort significantly.
+So $s_{veh}$ at any epoch is then sum of the link lengths behind it's perpendicular projection$\bf{r}_p$.
+However, the error in this approximation approaches zero as the spacing between path points approaches zero.
+Other, more accurate, approximations which work well include cubic splines, arc splines, and Bezier curves, which have solutions for closest point projection and arc-length calculation~\cite{Wang2002,Wang2003,Schindler2011}.
+
+Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to $v_{B,x}(t)$, $a_{B,x}(t)$, and $j_{B,x}(t)$.
+Additionally, it is also needed to sample $s(t)$ at intervals ahead of the vehicle.
+Since it is known that $s(t)$ is piecewise cubic, $t(s)$ may be approximated as cubic if a spline is being constructed from knots which have a very high resolution.
+In this case, an $s(t)$ spline has already been created using the control points from the unification process, and it is now resampled at $\Delta t = 0.01 sec$.
+This yields two vectors $s'$ and $t'$ which are then used to create a univariate cubic $t(s)$ spline.
+Evaluating the $t(s_{veh})$ then yields the current reference time.
 
 
 
