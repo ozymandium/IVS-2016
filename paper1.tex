@@ -284,6 +284,17 @@ For each segment with $M$ jerk phases, the following is produced:
   \item $M$ jerk values, which may be appended directly to the preceding jerk values
 \end{itemize}
 
+After stitching together control point vectors for time, position, and its derivatives, all information required to have a trajectory plan is now in place.
+Since $j(t)$ is piecewise constant, it may be integrated to determine an instantaneous trajectory at any moment in time.
+To aid in this, univariate splines are created with time as the independent variable, using the control points as knots.
+Position along the path $s(t)$ takes the form of a cubic Hermite spline, constructed using the speed control points $v_{B,x}(t)$ to set the derivatives.
+Speed along the path $v_{B,x}(t)$ takes the form of a quadratic Hermite spline, with the acceleration control points $a_{B,x}(t)$ used to set the derivatives at every knot.
+Acceleration $a_{B,x}(t)$ is piecewise linear, so lookup is a trivial matter.
+The same applies to $j_{B,x}(t)$, which may be implemented with a simple table.
+
+However, the time at which the trajectory plan must be referenced is not always known.
+The solution to this problem is known as trajectory tracking, and will be discussed in the next section.
+
 \section{Trajectory Tracking} \label{sec:trajectorytracking}
 
 After planning has been performed, a reference signal must be regularly supplied to a control system in order for the vehicle to carry out the plan.
@@ -319,7 +330,9 @@ In this case, an $s(t)$ spline has already been created using the control points
 This yields two vectors $s'$ and $t'$ which are then used to create a univariate cubic $t(s)$ spline.
 Evaluating the $t(s_{veh})$ then yields the current reference time.
 
+\section{Implementation}
 
+\emph{How much should we say here?}
 
 \section*{Acknowledgments}
 
