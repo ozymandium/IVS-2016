@@ -194,6 +194,7 @@ After this is done, the process described above in Section \ref{sec:jerkprofiles
 The ceiling calculation is a minimax problem.
 Each of the 9 scalars is a minimum of several maxima computed from an arbitrary set of constraints.
 For instance, ... \emph{put examples of things we didn't do...}
+
 % How we actually did this.
 For the purposes of developing a simple example application, two constraints will be used for $v_{m,k}$: legal speed limit ( $SL$, set constant for the whole path) and lateral acceleration limit ($a_{B,y}^{max}$. 
 Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$.
@@ -242,25 +243,46 @@ Speed and acceleration must be continuous between each segment, but only the cor
 The values of $a_i$ and $v_i$ for the first segment is set to be the value which is currently reported from sensor data.
 Since the final acceleration is set to zero for all profiles, each subsequent segment may begin with $a_i = 0$.
 For the final segment, setting $v_f = 0$ is prudent unless the scenario demands otherwise.
-To set boundary speed conditions for the interior segments, 
+To set boundary speed conditions for the interior segments, Algorithm~\ref{alg:segmentspeedboundaryconditions}
 
 \begin{figure}
   \begin{algorithmic}[1]
     \Procedure{SegmentBoundarySpeeds}{$v_m$}
       \State $\mathbf{v}_p \gets \mathbf{v}_m$ \Comment{Initialize targets as ceilings}
-      \State 
-      \State $\mathbf{v}_p = [\mathbf{v}_p, 0]$ \Comment{Final speed is 0}
-      \For{$k = 1, ..., N_s-2$}
+      \State $\mathbf{v}_{p,0} \gets v_i$ \Comment{Set starting speed to current}
+      \State $\mathbf{v}_p = [\mathbf{v}_p, 0]$ \Comment{Add final speed of 0}
+      \For{$k = 1, ..., N_s-1$}
+        \If{$v_{m,i+1} > v_{m,i}$}
+          \State $v_{p,i+1} \gets v_{m,i}$
+        \ElsIf{$v_{m,i+1} > v_{m,i}$}
+          \State $v_{p,i+1} \gets v_{m,i+1}$
+        \Else
+          \State $v_{p,i+1} \gets v_{m,i}$
+        \EndIf
       \EndFor
     \EndProcedure
   \end{algorithmic}
 \caption{Algorithm to set speed boundary conditions for interior path segments}
-\label{fig:segmentspeedboundaryconditions}
+\label{alg:segmentspeedboundaryconditions}
 \end{figure}
 
-
 % talk about control points
+Now each segment is solved individually.
+In the case where a segment requires a speed change which is infeasible given limits on acceleration and jerk, then the final speed for that segment is planned to be the closes possible value.
+When these discrepancies in the feasible $v_f$ for a segment arise, the corresponding value in $v_p$ is updated so that the new conditions may be accounted for in the subsequent segment.
 
+At the end of the process, there will be a set of $N_{cp}$ ``control points''. A control point is a vector $[t_{ref}, s, v_{B,x}, a_{B,x}, j_{B,x}]$ which describes the longitudinal kinematic state of the target vehicle at the moment of an infinite jounce jerk change.
+Fitting a jerk profile to each segment results in control points which must be stitched into the control points for the preceding segments.
+While no further information than initial conditions, time durations, and jerk values is needed (simple integration would yield lower derivatives of position), this information is already available since it must be solved for each segment.
+This extra information may be used as a redundancy layer to verify that no errors occured.
+For each segment with $M$ jerk phases, the following is produced:
+\begin{itemize}
+  \item $M$ time durations $\Delta t_{ref}$. These must be added to the last time value from the previous segment to translate them into reference time.
+  \item $M+1$ values of distance elapsed within the segment $\Delta s$. These must be shifted forward by the last $s$ value from the previous segment to translate them into the 1D path domain. Additionally, the first value must be erased.
+  \item $M+1$ values of $v_{B,x}$. The first value is checked against the last value from the previous segment to verify equality, then it is erased. These need no translation.
+  \item $M+1$ values of $a_{B,x}$. The first value is checked against the last value from the previous segment to verify equality, then it is erased. These need no translation.
+  \item $M$ jerk values, which may be appended directly to the preceding jerk values
+\end{itemize}
 
 \section{Trajectory Tracking} \label{sec:trajectorytracking}
 
