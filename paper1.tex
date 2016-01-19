@@ -19,19 +19,19 @@
   and
   David Bevly $^{4}$
   \thanks{
-    * This work is supported by Honda Research Institute USA.
+    * This work was performed at Honda Research Institute USA.
   }
   \thanks{
-    $^{1}$ Robert G. Cofield is a graduate researcher at Auburn University's GPS \& Vehicle Dynamics Laboratory.
+    $^{1}$ Auburn University, Dept. of Mechanical Engineering, GPS \& Vehicle Dynamics Laboratory.
   }
   \thanks{
-    $^{2}$ Rakesh Gupta ...
+    $^{2}$ Honda Research Institute USA
   }
   \thanks{
-    $^{3}$ Ambarish Goswami ... 
+    $^{3}$ Honda Research Institute USA
   }
   \thanks{
-    $^{4}$ David Bevly ...
+    $^{4}$ Auburn University, Dept. of Mechanical Engineering, GPS \& Vehicle Dynamics Laboratory.
   }
 }
 
@@ -76,8 +76,6 @@ These may include legal speed limits, engine dynamics, desired sideslip limits, 
 %  - robot joint planning --> constant jerk intervals
 
 % We will use the path-velocity decomposition
-% mention using curvilinear CS
-% 
 
 Lit review...
 
@@ -94,11 +92,11 @@ How is this different from the others ...
 For the purposes of this work, the objective of trajectory planning is to take a 2 dimensional (horizontal plane) path, and compute a series of constant jerk intervals for motion along the length of the path which is time optimal yet still falls within constraints on speed, acceleration, and jerk.
 Elevation changes will not be addressed here.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
-It is assumed that the path planner operates independently from the trajectory planner and tracker.
+We assume that the path planner operates independently from the trajectory planner and tracker.
 Prescribed initial and end conditions for position, speed, and acceleration must also be honored. 
 This means that the desired trajectory plan is one dimensional, so using curvilinear coordinates will significantly simplify the solution.
-It will be shown how two dimensional concerns (specifically cornering speeds for this work) may be expressed in one dimension to guide planning.
-All planning will be longitidinal; that is, speed will be the primary focus, and it is assumed that a separate yaw controller will ensure that the origin of the vehicle.
+We show how two dimensional concerns (specifically cornering speeds for this work) are expressed in one dimension to guide planning.
+All planning is longitudinal; that is, speed is the primary focus, and we assume that a separate yaw controller will ensure that the vehicle follows the prescribed path.
 
 \begin{figure}[thpb]
   \centering
@@ -215,7 +213,7 @@ Figure \ref{fig:course_highlight_turns} shows the result of this algorithm.
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
-  \caption{Clustering output for a short path when using an algorithm which draws segment boundaries around curves.}
+  \caption{Clustering output for a short path when using an algorithm which draws segment boundaries around curves. Portions in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.176 m/s (25 mi/hr).}
   \label{fig:course_highlight_turns}
 \end{figure}
 
@@ -230,7 +228,7 @@ For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$,
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
-  \caption{Example of $v_m$ consolidation for simple univariate path clustering.}
+  \caption{Example of $v_m$ consolidation for simple univariate path clustering which corresponds the the path shown in Figure \ref{fig:course_highlight_turns}. The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan. The longitudinal speed required to adhere to lateral acceleration limits is shown in red. The resultant speed ceiling is shown in blue.}
   \label{fig:consolidation_speed_ceiling}
 \end{figure}
 
