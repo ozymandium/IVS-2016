@@ -146,25 +146,31 @@ For each of the profiles, it is possible that the chosen values of $\mathbf{a}_m
 This results in a negative time interval for that phase.
 In many cases, modifying $\mathbf{a}_m$ and $\mathbf{j}_m$ such that they still lie within $\mathbf{a}^{max}_m$ and $\mathbf{j}^{max}_m$ will remedy this.
 Specifically, jerk may be increased while peak acceleration is decreased.
+This process is referred to herein as ``accel-jerk tuning''
 If no acceptable values are found within the valid ranges of $\mathbf{a}^{max}_m$ and $\mathbf{j}^{max}_m$, a new jerk profile must be chosen.
 
 To decide which profile to employ, a cascade approach is used.
 Analytic values of time intervals are evaluated for each profile by plugging in values of $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ until all time intervals are positive and real. 
 The order in which they are attempted is: 7 $\rightarrow$ 6 $\rightarrow$ 4 $\rightarrow$ 4R $\rightarrow$ 3.
 
-
 \subsubsection{7 Phase} \label{sec:7phase}
 
 This profile, described above, is always attempted first.
 All time steps have a single solution, enabled by the fact that the initial and end conditions are known, and the two peak accelerations and two jerk magnitudes are provided as configuration parameters.
-
-
+In the case where $\Delta t_2$ or $\Delta t_6$ are negative, accel-jerk tuning must be employed.
+In the instance where $\Delta t_4$ is negative, the total segment length $L$ is too short to reach top speed of $v_m$, so a 6 phase profile must be used.
 
 \subsubsection{6 Phase} \label{sec:6phase}
 
 In the case mentioned above, the speed limit is too high for a solution to exist for a 7 phase profile.
-The middle travel period is removed, so that the vehicle increases speed and then immediately decreases speed. 
+The middle travel period $\Delta t_4$ is removed, so that the vehicle increases speed and then immediately decreases speed. 
 The peak speed in this case has a solution, but cannot be manipulated directly.
+Without this known value, the problem becomes underdefined, so $\Delta t_2$ and $\Delta t_5$ each have two solutions: one negative and one positive.
+The positive solution is chosen.
+In the case where both solutions are negative, accel-jerk tuning is attempted. 
+Should that yield no positive time intervals, one of the two 4 phase profiles then becomes appropriate, since $L$ is not large enough to accomodate accelerating past the end speed.
+If $v_i > v_f$, then a reversed 4 phase profile is attempted.
+However, if $v_i > v_f$, then a regular 4 phase profile is attempted.
 
 \begin{figure}[thpb]
   \centering
@@ -180,7 +186,7 @@ When $v_i < v_m \simeq v_f$, the vehicle should increase speed, then maintain th
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=0.7\columnwidth]{graphics/4phase_v(s).png}
-  \caption{4 phase profile, displayed as speed vs. position along path.}
+  \caption{4 phase profile, displayed as speed vs. position along path within the segment.}
   \label{fig:4phaseprofile}
 \end{figure}
 
@@ -192,7 +198,7 @@ The initial speed is maintained for a period before applying the brakes.
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=0.7\columnwidth]{graphics/4Rphase_all_derivatives.png}
-  \caption{Reversed 4 phase profile, displayed as speed vs. position along path.}
+  \caption{Reversed 4 phase profile, displayed as speed vs. position along path within the segment.}
   \label{fig:4rphaseprofile}
 \end{figure}
 
@@ -201,7 +207,7 @@ The initial speed is maintained for a period before applying the brakes.
 A change from one speed to another.
 All of the above profiles are composed of some combination of a 3 phase profile and a $j_k = 0$ phase.
 This presents a difficulty in that either $L$ or $v_f$ may be enforced, but not both (there is no solution to enforce both).
-As such, this profile is chosen for a segment in which it is impossible to completely arrive at the end speed given the initial speed. 
+As such, this profile is chosen only for a segment in which it is impossible to completely arrive at the end speed given the initial speed, so fitting one of the two 4 phase profiles has been attempted and subsequently failed.
 
 \begin{figure}[thpb]
   \centering
