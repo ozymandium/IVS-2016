@@ -9,7 +9,9 @@
 \usepackage[noadjust]{cite}
 
 \title{\LARGE \bf
-  Longitudinal Trajectory Planning and Tracking for Fixed-Path Autonomous Driving
+  % Longitudinal Trajectory Planning and Tracking for Fixed-Path Autonomous Driving
+  % Reactive Path Planning with Pedestrains for Autonomous Driving
+  Reactive Trajectory Planning and Tracking for Pedestrian-Aware Autonomous Driving on Fixed Paths
 }
 
 \author{
@@ -45,13 +47,19 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-When planning trajectories for an autonomous ground vehicle operating on roadways, it is common to employ the path-velocity decomposition (i.e., path planning is performed prior to planning the speed that the vehicle will take along the chosen path).
+When planning trajectories for an autonomous ground vehicle operating on roadways, a typical goal is to minimize navigation time.
+It is common to employ the path-velocity decomposition to create trajectory plans, meaning there are two tasks which can be carried out sequentially or in parallel.
+% (i.e., path planning is performed prior to planning the speed that the vehicle will take along the chosen path).
+First is path planning which involves computation of the shortest path.
+The second task is velocity planning (or trajectory generation) which involves the computation of the fastest velocity profile that is appropriate for the cargo or passengers.
+
 Given a desired path, we present a novel method of planning longitudinal trajectories (i.e., the time derivatives of position in the body-forward direction) along that path.
 This method first segments the path using an arbitrary set of kinematic or dynamic constaints which may be functions of the desired path.
 Each segement is then planned sequentially by choosing a piecewise constant jerk profile.
-The jerk profile is intelligently chosen from a set of pre-solved profiles such that acceleration is continuous throughout the entire path.
-The resultant trajectory plan can then be easily sampled to provide a reference for real-time vehicle control.
-This method is shown to be efficient and reliable for use in online planning with a test vehicle.
+The jerk profile is intelligently chosen from a set of pre-solved profiles such that acceleration is continuous and non-infinite throughout the entire path.
+The resultant trajectory plan can then be easily sampled to provide a reference for real-time vehicle control, which is trajectory tracking.
+We then present an online method of revising the trajectory plan to safely avoid pedestrians who enter the roadway by slowing or stopping when no alternative paths are available.
+This framework is shown to be efficient and reliable for use in online planning with a test vehicle and real pedestrians, while optimizing rider comfort.
 
 \end{abstract}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,6 +72,12 @@ One such task is computing a tentative reference trajectory plan for travelling 
 While the set of possible paths between any two points is infinite, it is typically heavily restricted by consideration of constraints such as traversability and legally available travel lanes, among others.
 The intended speed, acceleration, and higher derivates of position with respect to time are also subject to constraints.
 These may include legal speed limits, engine dynamics, desired sideslip limits, traction availability, and rollover concerns.
+
+For human passengers, it is widely believed that high levels of jerk (time derivative of acceleration) and high acceleration/velocity values are prime contributors to ride discomfort.
+A lot of work has been performed on optimizing these constraints for highways and country roads ~\cite{ziegler14,bahram15,xu12,CHEB15CI}.
+Some preliminary work on optimizing these constraints on urban roads has been done ~\cite{Rastelli14,Li15} but they do not consider reactive behavior such as responding to pedestrians or other dynamic objects in the scene.
+On the other hand, many systems in the literature which find and plan paths around pedestrians, stop for them, or produce a warning ~\cite{pradalier05,benenson06,gu14,mogelmose15,johnson13} do not work as part of an integrated system that can navigate urban roads.
+In this paper, we describe an trajectory generation system that satisfies these constraints for human comfort as well as reactive to presence of pedestrians on the road.
 
 % intersection of path-planning constraints and speed-planning constraints is vehicle dynamics
 
