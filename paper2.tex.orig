@@ -6,7 +6,10 @@
 
 \usepackage[pdftex]{graphicx}
 \usepackage{algpseudocode}
+<<<<<<< HEAD
+=======
 \usepackage{subfigure}
+>>>>>>> master
 \usepackage[noadjust]{cite}
 
 \title{\LARGE \bf
@@ -88,17 +91,43 @@ level path manager that calls the trajectory planner as necessary as shown in Fi
 
 \section{Input Subsystems} \label{sec:inputsubsystems}
 
+<<<<<<< HEAD
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=1.0\columnwidth]{graphics/zenrin.png}
+  \caption{High resolution map. Red color is at road edges. Green color shows lane center-lines}
+  \label{fig:map}
+\end{figure}
+
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=1.0\columnwidth]{graphics/GoMentumSatelliteSmall.png}
+  \caption{Gomentum map top view}
+  \label{fig:gomentum}
+\end{figure}
+
+We assume that we have access to Path Planner. This can be for example a service similar to
+Google Maps except that it provides lane level maps. We also assume that we have a High
+Resolution digital map such as one shown in Figure \ref{fig:map} [corresponding to 
+Figure \ref{fig:gomentum}] with Lane centers, Stop 
+signs, crosswalk geometry, and Turning curves at intersections. The starting position the 
+=======
 We assume that we have access to Path Planner. This can be for example a service similar to
 Google Maps except that it provides lane level maps. We also assume that we have a High
 Resolution digital map with Lane centers, Stop signs, crosswalk geometry, and Turning 
 curves at intersections. The starting position the 
+>>>>>>> master
 car is determined via high grade GPS. The destination is manually input into the system.
 Using the path planner, we obtain a path along lane centers from start to the destination.
 This plan is output as waypoints, with the waypoints corresponding to stop signs marked.
 
 \begin{figure}[thpb]
   \centering
+<<<<<<< HEAD
+  \includegraphics[width=1.0\columnwidth]{graphics/ped-detection-screenshot.png}
+=======
   \includegraphics[width=0.5\columnwidth]{graphics/ped2.png}
+>>>>>>> master
   \caption{Showing detected pedestrian by the computer vision system}
   \label{fig:ped}
 \end{figure}
@@ -211,6 +240,24 @@ and when to go again.
 \section{Reactive Subsystem} \label{sec:reactiveubsystem}
 
 \begin{figure}[thpb]
+<<<<<<< HEAD
+  \centering
+  \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_NORMAL.png}
+  \caption{Normal mode}
+  \label{fig:react1}
+\end{figure}
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_RSTOP.png}
+  \caption{Stopping for the pedestrian mode}
+  \label{fig:react2}
+\end{figure}
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_RESUME.png}
+  \caption{Resuming after stop sign}
+  \label{fig:react3}
+=======
 \centering
   \subfigure[Normal mode]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_NORMAL.png}}
 \\
@@ -219,6 +266,7 @@ and when to go again.
   \subfigure[Resuming after stop sign]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_RESUME.png}}
   \caption{Reactive behavior to pedestrain}
   \label{fig:react}
+>>>>>>> master
 \end{figure}
 
 
