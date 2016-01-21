@@ -181,7 +181,8 @@ Remaining pedestrians pose collision risk and we need to reactively slow down or
 This is accomplished by sending stop message with pedestrian locations to path manager.
 
 For Navigation Filtering we use an ADMA-G based Commercial automotive GPS/INS system.
-It receives RTK corrections via cell modem. It outputs Global position, global heading,
+It receives RTK corrections via cell modem.
+It outputs Global position, global heading,
 body frame velocity and body frame acceleration to 10s of cms.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -349,16 +350,62 @@ Any number of clustering algorithms may be used here, and prudent choice of segm
 For the present example, we will choose a simple univariate heuristic which essentially identifies curves in the roadway.
 Each time that $v_{m,k} < SL$ becomes true, a curve is beginning, and a segment boundary is drawn.
 Each time that $v_{m,k} = SL$ is once again true, the current curve has ended, and another segment boundary is drawn.
-Figure \ref{fig:course_highlight_turns} shows the result of this algorithm. 
+Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm. 
+
+% \begin{figure}[thpb]
+%   \centering
+%   \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
+%   \caption{
+%     Clustering output for a short path when using an algorithm which draws segment boundaries around curves.
+%     Portions in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.176 m/s (25 mi/hr).
+%   }
+%   \label{fig:course_highlight_turns}
+% \end{figure}
+
+% \begin{figure}[thpb]
+%   \centering
+%   \includegraphics[width=1.0\columnwidth]{graphics/1Dsegmentation.png}
+%   \caption{Showing the path projected onto the one dimensional s coordinate system}
+%   \label{fig:scoord}
+% \end{figure}
+
+% \begin{figure}[thpb]
+%   \centering
+%   \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
+%   \caption{
+%     Example of $v_m$ consolidation for simple univariate path clustering which corresponds the the path shown in Figure \ref{fig:course_highlight_turns}.
+%     The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan.
+%     The longitudinal speed required to adhere to lateral acceleration limits is shown in red.
+%     The resultant speed ceiling is shown in blue.
+%   }
+%   \label{fig:consolidation_speed_ceiling}
+% \end{figure}
 
 \begin{figure}[thpb]
   \centering
-  \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
-  \caption{
+  \subfigure[
     Clustering output for a short path when using an algorithm which draws segment boundaries around curves.
     Portions in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.176 m/s (25 mi/hr).
+  ]{
+    \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
   }
-  \label{fig:course_highlight_turns}
+  \\
+  \subfigure[
+    Showing the path projected onto the one dimensional s coordinate system
+  ]{
+    \includegraphics[width=1.0\columnwidth]{graphics/1Dsegmentation.png}
+  }
+  \\
+  \subfigure[
+    Example of $v_m$ consolidation for simple univariate path clustering which corresponds to the path shown above.
+    The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan.
+    The longitudinal speed required to adhere to lateral acceleration limits is shown in red.
+    The resultant speed ceiling is shown in blue.
+  ]{
+  \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
+  }
+  \caption{\textbf{Cut down the subfigure captions and put it here!!!}}
+  \label{fig:1Dto2DandSegmentation}
 \end{figure}
 
 % need better notation here.
@@ -369,17 +416,6 @@ In the present example, this means that in the straight portions of the path $v_
 As a result, many of the curves will have a constant speed.
 For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
 
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
-  \caption{
-    Example of $v_m$ consolidation for simple univariate path clustering which corresponds the the path shown in Figure \ref{fig:course_highlight_turns}.
-    The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan.
-    The longitudinal speed required to adhere to lateral acceleration limits is shown in red.
-    The resultant speed ceiling is shown in blue.
-  }
-  \label{fig:consolidation_speed_ceiling}
-\end{figure}
 
 The power of this algorithm is that any set and number of constraints may be used ... \emph{etc., etc., ...}\tabularnewline
 
@@ -461,15 +497,34 @@ As such, we must find some way to look up the coordinates of the vehicle within 
 A minimal set of such information would include position, velocity vector, heading, and acceleration in the body frame.
 After this, it is assumed that the vehicle controller will need samples of a small window into the future trajectory in order to pilot the vehicle.
 
+\subsection{2d to 1d conversion}
+
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=0.5\columnwidth]{graphics/PathProjection.png}
+  \caption{Showing projection of current position of car shown by green triangle to s coordinate system}
+  \label{fig:cartos}
+\end{figure}
+
 The general idea is to project the vehicle's current position onto the path then find the cumulative distance along the path between the start point and the projection point.
 This is the 1D location corresponding to the vehicle's current reference time.
 Once this reference time is obtained, it may be used to look up position, speed, acceleration, and jerk along the curve of the path over the future time window.
 From there it is a matter of simple geometry to transform these values into the coordinate system of the path and, subsequently, any other coordinate system which may be needed.
 
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=0.5\columnwidth]{graphics/s(t)_generic.png}
+  \caption{
+    Transformation from s coordinate system to reference time.
+    The figure depicts s(t) for a 3 phase jerk profile with positive forward acceleration.
+  }
+  \label{fig:stot}
+\end{figure}
+
 % \subsection{Path Projection} \label{sec:pathprojection}
 
 Several algorithms exist to find the optimal projection of the target vehicle's present kinematic state (position, velocity, and acceleration vectors) onto the path.
-A simple approximation, which works well for the path shown in Figure~\ref{fig:course_highlight_turns} is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a ``link'').
+A simple approximation, which works well for the path shown in Figure~\ref{fig:1Dto2DandSegmentation} is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a ``link'').
 Projections which lie outside of the link's two constituent path points are snapped to that which is nearest.
 The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection $\mathbf{r}_p$.
 Any number of modifications can be made using heading, velocity vectors, and previous information to allow this method to be extended to complex paths which overlap or self-intersect.
@@ -480,7 +535,16 @@ So $s_{veh}$ at any epoch is then sum of the link lengths behind it's perpendicu
 However, the error in this approximation approaches zero as the spacing between path points approaches zero.
 Other, more accurate, approximations which work well include cubic splines, arc splines, and Bezier curves, which have solutions for closest point projection and arc-length calculation~\cite{Wang2002,Wang2003,Schindler2011}.
 
-Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to $v_{B,x}(t)$, $a_{B,x}(t)$, and $j_{B,x}(t)$.
+\subsection{Control Reference Signal} \label{sec:controlreferencesignal}
+
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=0.5\columnwidth]{graphics/PathProjectionSlice.png}
+  \caption{car to s coord with additional points}
+  \label{fig:cartos2}
+\end{figure}
+
+Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to look up $v_{B,x}(t_{veh})$, $a_{B,x}(t_{veh})$, and $j_{B,x}(t_{veh})$.
 Additionally, it is also needed to sample $s(t)$ at intervals ahead of the vehicle.
 Since it is known that $s(t)$ is piecewise cubic, $t(s)$ may be approximated as cubic if a spline is being constructed from knots which have a very high resolution.
 In this case, an $s(t)$ spline has already been created using the control points from the unified planning process described in Section~\ref{sec:unifiedsolution}, and it is now resampled at $\Delta t = 0.01 sec$.
@@ -493,15 +557,16 @@ Evaluating the $t(s_{veh})$ then yields the current reference time.
 \section{Path Manager} \label{sec:pathmanager}
 
 
-Path Pre-processor conforms the path to planner assumptions. The Path Manager breaks up the
+Path Pre-processor conforms the path to planner assumptions.
+The path manager breaks up the
 path at stop signs, decides when to stop, when to go and invokes the trajectory planner
-as necessary. 
+as necessary.
 
-There are two types of stops - Planned (PSTOP) and Reactive (RSTOP). At reactive stops
+There are two types of stops: planned (PSTOP) and reactive (RSTOP).
+At reactive stops
 to pedestrians, the car may slow down and restart if the pedestrian leaves before the
 car comes to a stop; otherwise the car would come to a stop and restarts once the 
 pedestrian leaves.
-
 The state of the car is represented by a State Machine as shown in figure \ref{fig:st}
 
 \begin{figure}[thpb]
@@ -513,32 +578,19 @@ The state of the car is represented by a State Machine as shown in figure \ref{f
 
 
 The assumption on our work is that there is a unique mapping from a time to s coordinate 
-system. This mapping breaks down when we are stopped at a planned or reactive stop. 
-The solution is to break the path into sub-paths, and plan and execute incrementally.
-This is shown in Figures \ref{fig:segmentation} \ref{fig:stcur} and \ref{fig:scoord}.
+system.
+This mapping breaks down when we are stopped at a planned or reactive stop, as there is now way to do a $t(s)$ when multiple reference time solutions exist for certain path positions.
+The solution is to break the path into sub-paths, and plan and execute them incrementally as shown in Fig. \ref{fig:segmentation}.
 
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=0.5\columnwidth]{graphics/Subpaths.png}
-  \caption{Segmentation of the path by path manager. The Trajectory generation is serially called on each segment colored differently. Need to update figure with stop signs????????????????}
+  \caption{Segmentation of the path by path manager. The trajectory generation is serially called on each segment colored differently. \textbf{Need to update figure with stop signs????????????????}
+  }
   \label{fig:segmentation}
 \end{figure}
 
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/course_highlighted_turns.png}
-  \caption{Further characterization of green path shown in segmentation figure into straight and curved parts}
-  \label{fig:stcur}
-\end{figure}
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/1Dsegmentation.png}
-  \caption{Showing the path projected onto the one dimensional s coordinate system}
-  \label{fig:scoord}
-\end{figure}
-
-The algorithm is:
+The procedure is:
 \begin{itemize}
 \item Send first sub-path to trajectory planner
 \item Wait until completed
@@ -547,11 +599,12 @@ The algorithm is:
 \item Repeat until end of path
 \end{itemize}
 
-For unplanned, reactive stops  we need to slow down and stop. There are three scenarios:
+For unplanned, reactive stops  we need to slow down and stop. 
+There are three scenarios:
 \begin{enumerate}
-\item Normal pedestrian → appears
-\item Stopping pedestrian → moves
-\item Stopped pedestrian leaves →
+\item \emph{Normal}: pedestrian appears
+\item \emph{Stopping}: pedestrian moves
+\item \emph{Stopped}: pedestrian leaves
 \end{enumerate}
 
 In the next section we describe when/where to begin braking, when/where to stop
@@ -561,24 +614,14 @@ and when to go again.
 
 \begin{figure}[thpb]
 \centering
-  \subfigure[Normal mode]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_NORMAL.png}}
-\\
-  \subfigure[Stopping for the pedestrian]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_RSTOP.png}}
-\\
+  \subfigure[In NORMAL mode, RSTOP is now triggered.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}}
+  \\
+  \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_RSTOP.png}}
+  \\
   \subfigure[Resuming after stop sign]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_RESUME.png}}
   \caption{Reactive behavior to pedestrain}
   \label{fig:react}
 \end{figure}
-
-
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/3phase_all_derivatives_SlowingDown.png}
-  \caption{3 phase R stop}
-  \label{fig:3phaserstop}
-\end{figure}
-
 
 \begin{figure}[thpb]
   \centering
@@ -586,7 +629,6 @@ and when to go again.
   \caption{Green color path is the one over which the car finds a trajectory to stop}
   \label{fig:pathtostop}
 \end{figure}
-
 
 For reactive stopping, if there are multiple pedestrian ahead, we only consider the
 closest pedestrian. That pedestrian is projected on the path of the car to determine the
@@ -624,87 +666,6 @@ We can travel along desired path, stop at stop signs, stop for pedestrians in ro
 they leave. Our system handles corner cases gracefully, and works with multiple pedestrians as we only 
 need to consider the closest pedestrian ahead of us. In future, we want to handle other roadway traffic, 
 coexisting with other vehicles. We would also like to perceive and stop for red-lights.
-
-\section{Examples}
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/FullStopSpec.png}
-  \caption{Example 3 phase jerk profile}
-  \label{fig:3phase}
-\end{figure}
-
-\section{2d to 1d conversion}
-
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/PathProjection.png}
-  \caption{Showing projection of current position of car shown by green triangle to s coordinate system}
-  \label{fig:cartos}
-\end{figure}
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/PathProjectionSlice.png}
-  \caption{car to s coord with additional points}
-  \label{fig:cartos2}
-\end{figure}
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/s(t)_generic.png}
-  \caption{Transformation from s coordinate system to time}
-  \label{fig:stot}
-\end{figure}
-
-\section{Other Issues}
-                
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/LowResPathSample.png}
-  \caption{Grid discretization issue}
-  \label{fig:discretization}
-\end{figure}
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/linestring.png}
-  \caption{Exaggerated view of path points which may have discontinuous curvature}
-  \label{fig:disc}
-\end{figure}
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/CircularCurvature.png}
-  \caption{circular curvature}
-  \label{fig:curv}
-\end{figure}
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/speed_ceiling.png}
-  \caption{Speed Ceiling}
-  \label{fig:speedceil}
-\end{figure}
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}
-  \caption{Reaction Response: Normal Mode}
-  \label{fig:7phaseprofile}
-\end{figure}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section{Implementation}
-
-\emph{How much should we say here?}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section*{Acknowledgments}
-
-Thanks...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
