@@ -153,17 +153,9 @@ This plan is output as waypoints, with the waypoints corresponding to stop signs
 %  \label{fig:ped2}
 %\end{figure}
 
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/screenshot-objectmap.png}
-  \caption{Showing car with road and path covered so far. The red filled circle shows the pedestrian for which the car is stopping}
-  \label{fig:car}
-\end{figure}
-
 Pedestrian Detection is performed via a Camera, and LiDAR system. It computes a bounding 
 box for each pedestrian as shown in Figure \ref{fig:ped}. The pedestrian position is 
-transformed to the vehicle body frame, and subsequently transformed to global frame and 
-can be shown on the map as in Figure \ref{fig:car}.
+transformed to the vehicle body frame, and subsequently transformed to global frame to be related to the planned path.
 
 \begin{figure}[thpb]
   \centering
@@ -256,7 +248,7 @@ If no acceptable values are found within the valid ranges of $\mathbf{a}^{max}_m
 
 To decide which profile to employ, a cascade approach is used.
 Analytic values of time intervals are evaluated for each profile by plugging in values of $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ until all time intervals are positive and real.
-The order in which they are attempted is: 7 $\rightarrow$ 6 $\rightarrow$ 4 $\rightarrow$ 4R $\rightarrow$ 3.
+The order in which they are attempted is: 7 $\rightarrow$ 6 $\rightarrow$ 4 / 4R $\rightarrow$ 3.
 
 \subsubsection{7 Phase} \label{sec:7phase}
 
@@ -390,12 +382,12 @@ Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm.
     \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
   }
   \\
-  \subfigure[
-    Showing the path projected onto the one dimensional s coordinate system
-  ]{
-    \includegraphics[width=1.0\columnwidth]{graphics/1Dsegmentation.png}
-  }
-  \\
+  % \subfigure[
+  %   Showing the path projected onto the one dimensional s coordinate system
+  % ]{
+  %   \includegraphics[width=1.0\columnwidth]{graphics/1Dsegmentation.png}
+  % }
+  % \\
   \subfigure[
     Example of $v_m$ consolidation for simple univariate path clustering which corresponds to the path shown above.
     The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan.
@@ -404,7 +396,7 @@ Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm.
   ]{
   \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
   }
-  \caption{\textbf{Cut down the subfigure captions and put it here!!!}}
+  \caption{Path segmentation and speed ceiling consolidation procedures.}
   \label{fig:1Dto2DandSegmentation}
 \end{figure}
 
@@ -509,16 +501,6 @@ This is the 1D location corresponding to the vehicle's current reference time.
 Once this reference time is obtained, it may be used to look up position, speed, acceleration, and jerk along the curve of the path over the future time window.
 From there it is a matter of simple geometry to transform these values into the coordinate system of the path and, subsequently, any other coordinate system which may be needed.
 
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/s(t)_generic.png}
-  \caption{
-    Transformation from s coordinate system to reference time.
-    The figure depicts s(t) for a 3 phase jerk profile with positive forward acceleration.
-  }
-  \label{fig:stot}
-\end{figure}
-
 % \subsection{Path Projection} \label{sec:pathprojection}
 
 Several algorithms exist to find the optimal projection of the target vehicle's present kinematic state (position, velocity, and acceleration vectors) onto the path.
@@ -546,17 +528,33 @@ Evaluating the $t(s_{veh})$ then yields the current reference time.
 \section{Path Manager} \label{sec:pathmanager}
 
 
-Path Pre-processor conforms the path to planner assumptions.
-The path manager breaks up the
-path at stop signs, decides when to stop, when to go and invokes the trajectory planner
-as necessary.
+The assumption on our work is that there is a unique mapping from a reference time $t_{ref}$ to a scalar value indicating the distance along the current path, $s$.
+system.
+This mapping breaks down when we are stopped at a planned or reactive stop, as there is no way to do a $t_{ref}(s)$ lookup when multiple reference time solutions exist for certain path positions.
+The solution is to break the path into sub-paths at each stop location (i.e., stop sign) which is known a priori, and plan then execute them incrementally as shown in Fig. \ref{fig:segmentation}.
+This is the first function of the path manager, and can be broken down as follows:
+\begin{itemize}
+\item Send first sub-path to trajectory planner
+\item Wait until completed.
+\item Pause for fixed time, typically 2-3 second.
+\item Continue waiting if any pedestrians are in the roadway ahead (along the intended path) within some fixed distance.
+\item Send next sub-path to planner.
+\item Repeat until end of path is reached.
+\end{itemize}
 
-There are two types of stops: planned (PSTOP) and reactive (RSTOP).
-At reactive stops
-to pedestrians, the car may slow down and restart if the pedestrian leaves before the
-car comes to a stop; otherwise the car would come to a stop and restarts once the 
-pedestrian leaves.
-The state of the car is represented by a State Machine as shown in figure \ref{fig:st}
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=0.5\columnwidth]{graphics/Subpaths.png}
+  \caption{
+    Segmentation of the path by path manager.
+    The trajectory generation is serially called on each segment colored differently.
+    \textbf{Need to update figure with stop signs???? ??????? ?????}
+  }
+  \label{fig:segmentation}
+\end{figure}
+
+Both behaviors dictate that the path manager govern the operation of the trajectory planner.
+To enable both of these features, the path manager is implemented as a discrete state machine, as shown in Fig. \ref{fig:st}.
 
 \begin{figure}[thpb]
   \centering
@@ -565,39 +563,12 @@ The state of the car is represented by a State Machine as shown in figure \ref{f
   \label{fig:st}
 \end{figure}
 
+The distinction between momentarily braking for a pedestrian which quickly leaves the roadway and coming to a full stop needs no formal logic.
+They follow the same state transition, and since both trajectory plans are extremely smooth, riders are rarely aware that any change took place.
+It should be noted that there is a brief waiting period before resuming NORMAL mode from RSTOP to ensure that no tracking errors occurred in the pedestrian detection algorithm.
 
-The assumption on our work is that there is a unique mapping from a time to s coordinate 
-system.
-This mapping breaks down when we are stopped at a planned or reactive stop, as there is now way to do a $t(s)$ when multiple reference time solutions exist for certain path positions.
-The solution is to break the path into sub-paths, and plan and execute them incrementally as shown in Fig. \ref{fig:segmentation}.
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/Subpaths.png}
-  \caption{Segmentation of the path by path manager. The trajectory generation is serially called on each segment colored differently. \textbf{Need to update figure with stop signs????????????????}
-  }
-  \label{fig:segmentation}
-\end{figure}
-
-The procedure is:
-\begin{itemize}
-\item Send first sub-path to trajectory planner
-\item Wait until completed
-\item Pause for fixed time
-\item Send next sub-path to planner
-\item Repeat until end of path
-\end{itemize}
-
-For unplanned, reactive stops  we need to slow down and stop. 
-There are three scenarios:
-\begin{enumerate}
-\item \emph{Normal}: pedestrian appears
-\item \emph{Stopping}: pedestrian moves
-\item \emph{Stopped}: pedestrian leaves
-\end{enumerate}
-
-In the next section we describe when/where to begin braking, when/where to stop
-and when to go again.
+Next, the triggers for state transition will be described.
+They are implemented as a set of static and dynamic thresholds, which are depicted graphically in Fig. \ref{fig:react}.
 
 \begin{figure}[thpb]
 \centering
@@ -610,6 +581,38 @@ and when to go again.
   \label{fig:react}
 \end{figure}
 
+All detected pedestrians locations are compared against the high-resolution digital map, so that pedestrians which are not on the roadway or near an upcoming crosswalk are not considered.
+Then each pedestrian location is projected onto the total path in the same manner as described in Sec. \ref{sec:trajectorytracking}.
+Pedestrians which are on a different subpath than the vehicle are disregarded, as well as those which are behind the vehicle (i.e., $s_{ped} < s_{veh}$).
+All the pedestrians which remain pose a potential collision risk, however only the closest is considered for RSTOP.
+
+Next the nominal stopping distance $Delta s_{RSTOP}$ must be computed given the vehicle's current location, speed, and forward acceleration.
+The procedure for doing this will be the same as the procedure for planning the RSTOP later with a few steps omitted, since the planning algorithm is extremely efficient.
+A 3 phase profile will be used, with end conditions $v_f=0, a_f=0$ and initial conditions set to the current state of the navigation filter.
+
+While it would seem that the segment solving procedure described in Sec. \ref{sec:3phase} could be applied to reactive stopping, this is not the case.
+As was mentioned in previously, only one of $[L, v_f]$ may be rigidly enforced for a 3 phase profile, but not both, since no closed-form solution exists for that case.
+Normal planning chooses enforces $L$ to avoid skewing segment boundaries within each subpath.
+However, reactive stopping requires that $v_f$ be enforced, and $L$ be a parameter which may be solved dependently.
+Reformulating a new 3 phase jerk profile accordingly is a simple matter for a symbolic solver.
+%%% This is the brief way of wording the preceding three sentences.
+% The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as the hard constraint.
+
+\textbf{3 phase full spec profile figure?}. 
+
+Now appropriate values of $a_m^-$ and $j_m^-$ must be chosen to completely parameterize the trajectory.
+For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used.
+Note that a static buffer distance, $\Delta s_{buf}$ is added to ensure safety and comfort.
+RSTOP is triggered when $\Delta s_{RSTOP} + \Delta s_{buf} >= s_{ped} - s_{veh}$ and the actual available stopping distance $\Delta s_{avail} = s_{ped} - s_{veh}$ is computed.
+The trajectory is then recomputed with increasingly higher-magnitude values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} <= \Delta s_{avail}$.
+Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
+
+After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
+The path must now be truncated for 1D $\leftrightarrow$ 2D transformation.
+Within the trajectory tracker, all portions of the path leading up to the location of RSTOP tiggering are removed, as well as the portions after the location which corresponds to $s_{veh} + \Delta s_{RSTOP}$
+This is depicted in Fig. \ref{fig:pathtostop}
+The vehicle now begins sampling from this trajectory and is executing a smooth reactive stop.
+
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_path_truncation.png}
@@ -617,31 +620,10 @@ and when to go again.
   \label{fig:pathtostop}
 \end{figure}
 
-For reactive stopping, if there are multiple pedestrian ahead, we only consider the
-closest pedestrian.
-That pedestrian is projected on the path of the car to determine the required braking distance.
-The stopping trajectory is similar to rest of profile, and consists of a single segment with 3 phases as shown in Figure \textbf{reference! include 3 phase full spec profile?}. 
-The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as hard constraint.
-
-Typically while with the Trajectory Planner, we get initial conditions from the navigation filter.
-We use normal (sedate) peak parameters for acceleration and jerk.
-We plan a 3 phase stop profile with the current required stopping distance.
-
-Once a pedestrian enters the stop zone, we need to plan, and execute RSTOP trajectory.
-When available distance is less than “required” distance, we increase acceleration, jerk peaks to match available distance.
-
-After a reactive stop we split the path before the stop from the one after the stop
-sign and execute the later as a separate trajectory. The plan is stored and sampled 
-the same as in normal operation.
-
-To get back to normal driving after we are fully stopped, we resume
-after pedestrian leaves roadway, or pedestrian moves far down roadway.
-When he moved further down, we stop again later after we are a threshold
-distance away. The effect is that we follow the person at the distance with some 
-delay in chunks of few meters each time. If the pedestrian leaves before 
-the car comes to a full stop, the car can speed up without stopping using the 
-same algorithm.
-
+This procedure is repeated when the nearest pedestrian location changes by a value more than some static buffer $\Delta s_{replan} < \Delta s_{buf}$ compared to the location for which the current RSTOP planned.
+This value is typically set to 1 meter.
+Normal operation is resumed when the distance between the vehicle and the closest detected pedestrian satisfies $s_{ped} - s_{veh} > \Delta s_{resume} + \Delta s_{RSTOP}$. The static resume buffer should be set such that $\Delta s_{resume} > \Delta s_{buf} + \Delta s_{replan}$.
+The preceding buffers are depicted graphically in Fig. \ref{fig:react}.
 
 \section{Summary} \label{sec:summary}
 
