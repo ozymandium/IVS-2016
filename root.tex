@@ -497,8 +497,6 @@ As such, we must find some way to look up the coordinates of the vehicle within 
 A minimal set of such information would include position, velocity vector, heading, and acceleration in the body frame.
 After this, it is assumed that the vehicle controller will need samples of a small window into the future trajectory in order to pilot the vehicle.
 
-\subsection{2d to 1d conversion}
-
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=0.5\columnwidth]{graphics/PathProjection.png}
@@ -534,15 +532,6 @@ Assuming that the path is linear between waypoints reduces computational effort 
 So $s_{veh}$ at any epoch is then sum of the link lengths behind it's perpendicular projection$\mathbf{r}_p$.
 However, the error in this approximation approaches zero as the spacing between path points approaches zero.
 Other, more accurate, approximations which work well include cubic splines, arc splines, and Bezier curves, which have solutions for closest point projection and arc-length calculation~\cite{Wang2002,Wang2003,Schindler2011}.
-
-\subsection{Control Reference Signal} \label{sec:controlreferencesignal}
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/PathProjectionSlice.png}
-  \caption{car to s coord with additional points}
-  \label{fig:cartos2}
-\end{figure}
 
 Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to look up $v_{B,x}(t_{veh})$, $a_{B,x}(t_{veh})$, and $j_{B,x}(t_{veh})$.
 Additionally, it is also needed to sample $s(t)$ at intervals ahead of the vehicle.
@@ -610,15 +599,13 @@ There are three scenarios:
 In the next section we describe when/where to begin braking, when/where to stop
 and when to go again.
 
-\section{Reactive Subsystem} \label{sec:reactiveubsystem}
-
 \begin{figure}[thpb]
 \centering
   \subfigure[In NORMAL mode, RSTOP is now triggered.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}}
   \\
   \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_RSTOP.png}}
   \\
-  \subfigure[Resuming after stop sign]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_RESUME.png}}
+  \subfigure[PSTOP diagram showing bounds for reverting to NORMAL mode.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_RESUME.png}}
   \caption{Reactive behavior to pedestrain}
   \label{fig:react}
 \end{figure}
@@ -631,20 +618,17 @@ and when to go again.
 \end{figure}
 
 For reactive stopping, if there are multiple pedestrian ahead, we only consider the
-closest pedestrian. That pedestrian is projected on the path of the car to determine the
-required braking distance. The stopping trajectory is similar to rest of profile,
-and consists of a single segment with 3 phases as shown in Figure \ref{fig:3phase}. 
-The trajectory planner uses total distance as parameter, and is not suitable for
-our purpose as the end speed constraints are not met. So we reformulate and 
-replace $L$ with $v_f$ as hard constraint.
+closest pedestrian.
+That pedestrian is projected on the path of the car to determine the required braking distance.
+The stopping trajectory is similar to rest of profile, and consists of a single segment with 3 phases as shown in Figure \textbf{reference! include 3 phase full spec profile?}. 
+The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as hard constraint.
 
-Typically while with the Trajectory Planner, we get initial conditions from the
-navigation filter. We use normal (sedate) peak parameters for acceleration
-and jerk. We plan a 3 phase stop profile with the current required stopping distance.
+Typically while with the Trajectory Planner, we get initial conditions from the navigation filter.
+We use normal (sedate) peak parameters for acceleration and jerk.
+We plan a 3 phase stop profile with the current required stopping distance.
 
 Once a pedestrian enters the stop zone, we need to plan, and execute RSTOP trajectory.
-When available distance <= “required” distance, we increase acceleration, jerk peaks to
-match available distance.
+When available distance is less than “required” distance, we increase acceleration, jerk peaks to match available distance.
 
 After a reactive stop we split the path before the stop from the one after the stop
 sign and execute the later as a separate trajectory. The plan is stored and sampled 
