@@ -250,37 +250,12 @@ It should be noted that there is a brief waiting period before resuming NORMAL m
   \label{fig:react}
 \end{figure}
 
-Next the nominal stopping distance $\Delta s_{RSTOP}$ must be computed given the vehicle's current location, speed, and forward acceleration.
-The procedure for doing this will be the same as the procedure for planning the RSTOP later with a few steps omitted, since the planning algorithm is extremely efficient.
-A 3 phase profile will be used, with end conditions $v_f=0, a_f=0$ and initial conditions set to the current state of the navigation filter.
+Next the nominal distance needed to stop $\Delta s_{RSTOP}$ must be computed given the vehicle's current location, speed, and forward acceleration.
+The procedure for doing this will be the same as the procedure for planning the RSTOP trajectory later with a few steps omitted, since the planning algorithm is extremely efficient.
 
-While it would seem that the segment solving procedure described in Sec. \ref{sec:3phase} could be applied to reactive stopping, this is not the case.
-As was mentioned previously, only one of $[L, v_f]$ may be rigidly enforced for a 3 phase profile, but not both, since no closed-form solution exists for that case.
-Normal planning enforces $L$ to avoid skewing segment boundaries within each subpath.
-However, reactive stopping requires that $v_f$ be enforced, and that we solve for $L$.
-Reformulating a new 3 phase jerk profile accordingly is a simple matter for a symbolic solver.
-%%% This is the brief way of wording the preceding three sentences.
-% The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as the hard constraint.
-
-Now appropriate values of $a_m^-$ and $j_m^-$ must be chosen to completely parameterize the trajectory.
-For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used.
 Note that a static buffer distance, $\Delta s_{buf}$ is added to ensure safety and comfort.
 RSTOP is triggered when $\Delta s_{RSTOP} + \Delta s_{buf} >= s_{ped} - s_{veh}$ and the actual available stopping distance $\Delta s_{avail} = s_{ped} - s_{veh}$ is computed.
-The trajectory is then recomputed with increasingly higher-magnitude values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} <= \Delta s_{avail}$.
-Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
-
-After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
-The path must now be truncated for 1D $\leftrightarrow$ 2D transformation.
-Within the trajectory tracker, all portions of the path leading up to the location of RSTOP triggering are removed, as well as the portions after the location which corresponds to $s_{veh} + \Delta s_{RSTOP}$
-This is depicted in Fig. \ref{fig:pathtostop}
-The vehicle now begins sampling from this trajectory and is executing a smooth reactive stop.
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_path_truncation.png}
-  \caption{Green color path is the one over which the car finds a trajectory to stop. please show green as dashes for b\&w printing ??????????? }
-  \label{fig:pathtostop}
-\end{figure}
+Planning and executing the trajectory for coming to a halt is detailed in Sec. \ref{sec:reactivestoptrajectory}.
 
 This procedure is repeated when the nearest pedestrian location changes by a value more than some static buffer $\Delta s_{replan} < \Delta s_{buf}$ compared to the location for which the current RSTOP planned.
 This value is typically set to 1 meter.
@@ -420,7 +395,6 @@ A change from one speed to another.
 All of the above profiles are composed of some combination of a 3 phase profile and a $j_k = 0$ phase.
 This presents a difficulty in that either $L$ or $v_f$ may be enforced, but not both (there is no solution to enforce both).
 As such, this profile is chosen only for a segment in which it is impossible to completely arrive at the end speed given the initial speed, so fitting one of the two 4 phase profiles has been attempted and subsequently failed.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -588,6 +562,41 @@ The same applies to $j_{B,x}(t)$, which may be implemented with a simple table.
 
 However, the time at which the trajectory plan must be referenced is not always known.
 The solution to this problem is known as trajectory tracking control, and will be discussed in the next section.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Reactive Stop Trajectories} \label{sec:reactivestoptrajectory}
+
+This is the procedure for determining nominal stopping distance required.
+A 3 phase profile will be used, with end conditions $v_f=0, a_f=0$ and initial conditions set to the current state of the navigation filter.
+
+While it would seem that the segment solving procedure described in Sec. \ref{sec:3phase} could be applied to reactive stopping, this is not the case.
+As was mentioned previously, only one of $[L, v_f]$ may be rigidly enforced for a 3 phase profile, but not both, since no closed-form solution exists for that case.
+Normal planning enforces $L$ to avoid skewing segment boundaries within each subpath.
+However, reactive stopping requires that $v_f$ be enforced, and that we solve for $L$.
+Reformulating a new 3 phase jerk profile accordingly is a simple matter for a symbolic solver.
+%%% This is the brief way of wording the preceding three sentences.
+% The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as the hard constraint.
+
+Now appropriate values of $a_m^-$ and $j_m^-$ must be chosen to completely parameterize the trajectory.
+For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used.
+
+Once the path manager triggers RSTOP, the trajectory is then recomputed with increasingly higher-magnitude values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} <= \Delta s_{avail}$.
+Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
+
+After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
+The path must now be truncated for 1D $\leftrightarrow$ 2D transformation.
+Within the trajectory tracker, all portions of the path leading up to the location of RSTOP triggering are removed, as well as the portions after the location which corresponds to $s_{veh} + \Delta s_{RSTOP}$
+This is depicted in Fig. \ref{fig:pathtostop}
+The vehicle now begins sampling from this trajectory and is executing a smooth reactive stop.
+
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_path_truncation.png}
+  \caption{Green color path is the one over which the car finds a trajectory to stop. please show green as dashes for b\&w printing ??????????? }
+  \label{fig:pathtostop}
+\end{figure}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
