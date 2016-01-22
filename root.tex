@@ -338,9 +338,11 @@ The ceiling calculation is a minimax problem.
 Each of the 9 scalars is a minimum of several maxima computed from an arbitrary set of constraints.
 For instance, acceleration constraints may include a set of limits derived from friction coefficients at every point along the path.
 
+
 % How we actually did this.
 For the purposes of developing a simple example application, two constraints will be used for $v_{m,k}$: legal speed limit ($SL$, set constant for the whole path) and lateral acceleration limit $a_{B,y}^{max}$. 
 Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$.
+\emph{RG: $N_p$ not defined. this is the first place we introduce two subscripts. please explain what the two subscripts stand for in general for example in $a_{B,y}$ and $v_{m,k}$ ?????? }
 The value $\kappa_k$ denotes the path curvature at each point.
 For each path point, the value $v_{m,k}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$.
 
@@ -450,9 +452,11 @@ Algorithm~\ref{alg:segmentspeedboundaryconditions} is used to set boundary speed
       \EndFor
     \EndProcedure
   \end{algorithmic}
-\caption{Algorithm to set speed boundary conditions for interior path segments}
+\caption{Algorithm to set speed boundary conditions for interior path segments. We iterate over ??? in line 5 to set ?????? }
 \label{alg:segmentspeedboundaryconditions}
 \end{figure}
+
+\emph{RG: lines 6 and 8 in algorithm fire ate same. please check.??????}
 
 % talk about control points
 Now each segment is solved individually.
@@ -473,6 +477,8 @@ For each segment with $M$ jerk phases, the following is produced:
   \item $M$ jerk values, which may be appended directly to the preceding jerk values
 \end{itemize}
 
+\emph{RG: please explain reference time, $s$ and $\Delta s$ ????????}
+
 After stitching together control point vectors for time, position, and its derivatives, all information required to have a trajectory plan is now in place.
 Since $j(t)$ is piecewise constant, it may be integrated to determine an instantaneous trajectory at any moment in time.
 To aid in this, univariate splines are created with time as the independent variable, using the control points as knots.
@@ -482,7 +488,7 @@ Acceleration $a_{B,x}(t)$ is piecewise linear, so lookup is a trivial matter.
 The same applies to $j_{B,x}(t)$, which may be implemented with a simple table.
 
 However, the time at which the trajectory plan must be referenced is not always known.
-The solution to this problem is known as trajectory tracking, and will be discussed in the next section.
+The solution to this problem is known as trajectory tracking control, and will be discussed in the next section.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -492,9 +498,9 @@ The solution to this problem is known as trajectory tracking, and will be discus
 After planning has been performed, a reference signal must be regularly supplied to a control system in order for the vehicle to carry out the plan.
 This is known as tracking control.
 The primary difficulty here is that the trajectory plan has been developed in a one dimensional position space using a reference time which will have unknown drift relative to real time.
-As such, we must find some way to look up the coordinates of the vehicle within the reference trajectory using information typically available for autonomous cars.
+As such, we must find a way to look up the coordinates of the vehicle within the reference trajectory using information typically available for autonomous cars.
 A minimal set of such information would include position, velocity vector, heading, and acceleration in the body frame.
-After this, it is assumed that the vehicle controller will need samples of a small window into the future trajectory in order to pilot the vehicle.
+After this, it is assumed that the vehicle controller will need samples of a small window into the future trajectory to pilot the vehicle.
 
 \begin{figure}[thpb]
   \centering
@@ -511,10 +517,10 @@ From there it is a matter of simple geometry to transform these values into the 
 % \subsection{Path Projection} \label{sec:pathprojection}
 
 Several algorithms exist to find the optimal projection of the target vehicle's present kinematic state (position, velocity, and acceleration vectors) onto the path.
-A simple approximation, which works well for the path shown in Figure~\ref{fig:1Dto2DandSegmentation} is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a ``link'').
+A simple approximation, which works well for the path shown in Figure~\ref{fig:1Dto2DandSegmentation} ???????? is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a ``link''). \emph{ RG: please show link in figure ???????}
 Projections which lie outside of the link's two constituent path points are snapped to that which is nearest.
 The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection $\mathbf{r}_p$.
-Any number of modifications can be made using heading, velocity vectors, and previous information to allow this method to be extended to complex paths which overlap or self-intersect.
+Any number of modifications can be made using heading, velocity vectors, and previous information to allow this method to be extended to complex paths which overlap or self-intersections.
 
 Choosing an algorithm to obtain the current one dimensional position of the vehicle along the length of the path $s_{veh}$ (i.e., in the same one-dimensional coordinate system that planning was performed) is influenced by the form of the path plan.
 Assuming that the path is linear between waypoints reduces computational effort significantly.
@@ -524,7 +530,7 @@ Other, more accurate, approximations which work well include cubic splines, arc 
 
 Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to look up $v_{B,x}(t_{veh})$, $a_{B,x}(t_{veh})$, and $j_{B,x}(t_{veh})$.
 Additionally, it is also needed to sample $s(t)$ at intervals ahead of the vehicle.
-Since it is known that $s(t)$ is piecewise cubic, $t(s)$ may be approximated as cubic if a spline is being constructed from knots which have a very high resolution.
+Since it is known that $s(t)$ is piecewise cubic, $t(s)$ \emph{RG: please define $t(s)$ ?????????} may be approximated as cubic if a spline is being constructed from knots which have a very high resolution.
 In this case, an $s(t)$ spline has already been created using the control points from the unified planning process described in Section~\ref{sec:unifiedsolution}, and it is now resampled at $\Delta t = 0.01 sec$.
 This yields two vectors $s'$ and $t'$ which are then used to create a univariate cubic $t(s)$ spline.
 Evaluating the $t(s_{veh})$ then yields the current reference time.
@@ -587,20 +593,21 @@ They are implemented as a set of static and dynamic thresholds, which are depict
   \caption{Reactive behavior to pedestrian}
   \label{fig:react}
 \end{figure}
+\emph{RG: a figure text etc is smaller than b and c. maybe crop from right to make same size}
 
 All detected pedestrians locations are compared against the high-resolution digital map, so that pedestrians which are not on the roadway or near an upcoming crosswalk are not considered.
 Then each pedestrian location is projected onto the total path in the same manner as described in Sec. \ref{sec:trajectorytracking}.
 Pedestrians which are on a different subpath than the vehicle are disregarded, as well as those which are behind the vehicle (i.e., $s_{ped} < s_{veh}$).
 All the pedestrians which remain pose a potential collision risk, however only the closest is considered for RSTOP.
 
-Next the nominal stopping distance $Delta s_{RSTOP}$ must be computed given the vehicle's current location, speed, and forward acceleration.
+Next the nominal stopping distance $\Delta s_{RSTOP}$ must be computed given the vehicle's current location, speed, and forward acceleration.
 The procedure for doing this will be the same as the procedure for planning the RSTOP later with a few steps omitted, since the planning algorithm is extremely efficient.
 A 3 phase profile will be used, with end conditions $v_f=0, a_f=0$ and initial conditions set to the current state of the navigation filter.
 
 While it would seem that the segment solving procedure described in Sec. \ref{sec:3phase} could be applied to reactive stopping, this is not the case.
-As was mentioned in previously, only one of $[L, v_f]$ may be rigidly enforced for a 3 phase profile, but not both, since no closed-form solution exists for that case.
-Normal planning chooses enforces $L$ to avoid skewing segment boundaries within each subpath.
-However, reactive stopping requires that $v_f$ be enforced, and $L$ be a parameter which may be solved dependently.
+As was mentioned previously, only one of $[L, v_f]$ may be rigidly enforced for a 3 phase profile, but not both, since no closed-form solution exists for that case.
+Normal planning enforces $L$ to avoid skewing segment boundaries within each subpath.
+However, reactive stopping requires that $v_f$ be enforced, and that we solve for $L$.
 Reformulating a new 3 phase jerk profile accordingly is a simple matter for a symbolic solver.
 %%% This is the brief way of wording the preceding three sentences.
 % The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as the hard constraint.
@@ -623,7 +630,7 @@ The vehicle now begins sampling from this trajectory and is executing a smooth r
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_path_truncation.png}
-  \caption{Green color path is the one over which the car finds a trajectory to stop}
+  \caption{Green color path is the one over which the car finds a trajectory to stop. please show green as dashes for b\&w printing ??????????? }
   \label{fig:pathtostop}
 \end{figure}
 
