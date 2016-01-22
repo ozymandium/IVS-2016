@@ -12,7 +12,7 @@
 \title{\LARGE \bf
   % Longitudinal Trajectory Planning and Tracking for Fixed-Path Autonomous Driving
   % Reactive Path Planning with Pedestrains for Autonomous Driving
-  Reactive Trajectory Planning and Tracking Control for Pedestrian-Aware Autonomous Driving in Urban Environments
+  Reactive Trajectory Planning and Trajectory Tracking for Pedestrian-Aware Autonomous Driving in Urban Environments
 }
 
 \author{
@@ -42,22 +42,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 
-In this paper, we address the problem of trajectory planning for urban roads while being 
-reactive to the presence of pedestrians.
-Past work reduces jerk and limits velocities and acceleration to smooth trajectories, but it does not consider 
-reactive behaviors such as responding to pedestrians. On the other hand, systems for collision 
-avoidance, plan paths around obstacles and pedestrians, stop for them, or produce a warning. 
-In this paper, we present an integrated trajectory generation and tracking control system for urban 
-environments that simultaneously considers constraints to maximize human comfort and real-time  
-trajectory updates to react to pedestrians on the road. 
+In this paper, we address the problem of trajectory planning for urban roads while reacting to the presence of pedestrians.
+Past work reduces jerk and limits velocities and acceleration to smooth trajectories, but it does not consider reactive behaviors such as responding to pedestrians.
+On the other hand, systems for collision avoidance plan paths around obstacles and pedestrians, stop for them, or produce a warning. 
+In this paper, we present an integrated trajectory generation and tracking system for urban environments that simultaneously considers constraints to maximize human comfort and real-time trajectory updates to react to pedestrians on the road. 
 
-Given a desired path, we present a novel online method for planning longitudinal trajectories 
-to follow the urban path with turns and intersections while honoring traffic regulations such 
-as stop signs. Based on sensor data, our method updates the trajectory plan to safely avoid 
-pedestrians on the road by slowing or stopping.
-Our method has closed form solutions, and runs at 20 Hz, and is efficient and reliable 
-for use in online planning. We have confirmed this with
-a test vehicle and pedestrians with 10s of hours of testing under autonomous driving conditions.
+Given a desired path, we present a novel online method for planning longitudinal trajectories to follow the urban path with turns and intersections while honoring traffic regulations such as stop signs.
+Based on sensor data, our method updates the trajectory plan to safely avoid pedestrians on the road by slowing or stopping.
+This is critical in urban environments, when modifying the vehicle's intended path is often not possible.
+Our method has closed form solutions, runs at 20 Hz, and is efficient and reliable for use in online planning.
+We have confirmed this with a test vehicle and pedestrians with over 100 hours of testing under driverless operation.
 
 \end{abstract}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -102,8 +96,9 @@ The jerk profile is intelligently chosen from a set of pre-solved profiles such 
 The resultant trajectory plan can then be easily sampled to provide a reference for real-time vehicle control, which is called trajectory tracking control.
 We present an online method of revising the trajectory plan to safely avoid pedestrians that enter the roadway by slowing or stopping when no alternative paths are available.
 
-We first describe the architecture of our system in Section II. We also describe other subsystems that our system needs to work with, and planned stops.
-In Section III, we describe trajectory planning which takes a 2D path and generates a trajectory that satisfies jerk and maximum velocity and acceleration constraints. 
+We first describe the architecture of our system in Sec. \ref{sec:systemarchirecture}.
+We also describe other subsystems that our system needs to work with, and planned stops.
+In Section \ref{sec:trajectoryplanning}, we describe trajectory planning which takes a 2D path and generates a trajectory that satisfies jerk and maximum velocity and acceleration constraints. 
 We explain how we handle intersections, turns in the road and planned stops due to stop signs (that have already been marked in the map).
 We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
 Once a trajectory plan is formulated, it must be utilized online to send the reference signal to the controllers that govern steering, braking, and engine speed.
@@ -116,16 +111,14 @@ We then conclude and discuss future extensions.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{System Architecture} \label{sec:systemarchirectureg}
-
+\section{System Architecture} \label{sec:systemarchirecture}
 
 Our system architecture is shown in Figure \ref{fig:addreact}.
-There are 4 primary input components.
-A path planner determines the optimal course to take by searching a map database.
-This same map database is used to search for stop signs and provide their locations.
-A GPS/INS navigation filter provides estimates of global position, velocity vector, attitude, and acceleration.
-A pedestrian detection component \cite{Gepperth2013,Gepperth2014} leverages computer vision in conjunction with the navigation filter to estimate the global location of pedestrians which are walking in front of the vehicle.
-Techniques for designing these components are abundant in the literature and are addressed here.
+There are 4 primary input components: a path planner, navigation filter, pedestrian detector, and a map which provides the location of stop signs.
+% nav filter
+For navigation filtering we use an ADMA-G  commercial automotive GPS/INS system.
+It receives RTK corrections via cell modem.
+It outputs global position, global heading, body frame velocity and body frame acceleration to centimeter level accuracy.
 
 \begin{figure}[thpb]
   \centering
@@ -136,15 +129,9 @@ Techniques for designing these components are abundant in the literature and are
   \label{fig:addreact}
 \end{figure}
 
-We assume that we have access to Path Planner. For example, this can be a service similar to
-Google Maps except that it provides lane level maps. 
-We assume that the path planner operates independently from the trajectory planner and tracker.
-We also assume that we have a High
-Resolution digital map with Lane centers, Stop signs, crosswalk geometry, and Turning 
-curves at intersections. The starting position the 
-car is determined via high grade GPS. The destination is manually input into the system.
-Using the path planner, we obtain a path along lane centers from start to the destination.
-This plan is output as waypoints, with the waypoints corresponding to stop signs marked.
+Pedestrian detection is performed via a camera and LiDAR system based on \cite{Gepperth2013,Gepperth2014}.
+It computes a bounding box for each pedestrian as shown in Figure \ref{fig:ped}.
+The pedestrian position is transformed to the vehicle body frame, and subsequently transformed to global frame to be related to the planned path.
 
 \begin{figure}[thpb]
   \centering
@@ -155,6 +142,15 @@ This plan is output as waypoints, with the waypoints corresponding to stop signs
   \label{fig:ped}
 \end{figure}
 
+We assume that we have access to a path planner.
+For example, this can be a service similar to Google Maps except that it provides lane level maps. 
+We assume that the path planner operates independently from the trajectory planner and tracker.
+We also assume that we have a high resolution digital map with lane centers, stop signs, crosswalk geometry, and turning curves at intersections.
+The destination is manually input into the system by the passengers.
+Using the path planner, we obtain a path along lane centers from the vehicle's current location (computed by the navigation filter) to the destination.
+This plan is output as set of global waypoints, with the waypoints corresponding to stop signs flagged.
+This same map database is used to search for stop signs and provide their locations.
+
 %\begin{figure}[thpb]
 %  \centering
 %  \includegraphics[width=1.0\columnwidth]{graphics/3023096-slide-c4carafter.png}
@@ -162,29 +158,134 @@ This plan is output as waypoints, with the waypoints corresponding to stop signs
 %  \label{fig:ped2}
 %\end{figure}
 
-Pedestrian Detection is performed via a Camera, and LiDAR system. It computes a bounding 
-box for each pedestrian as shown in Figure \ref{fig:ped}. The pedestrian position is 
-transformed to the vehicle body frame, and subsequently transformed to global frame to be related to the planned path.
-
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=0.3\columnwidth]{graphics/IntersectionCrosswalks.png}
-  \caption{A car turning right at the intersection only needs to care about pedestrians in the 
-pedestrian crossings shown yellow. Pedestrians in the green crossings can be ignored unless they
-appear somewhere on the road}
+  \caption{
+    A car turning right at the intersection only needs to consider pedestrians in the pedestrian crossings shown yellow.
+    Pedestrians in the green crossings can be ignored unless they appear somewhere on the road.
+  }
   \label{fig:intersect}
 \end{figure}
 
-We also have an In-Out Algorithm implemented via polygon intersection that can be used to
-ignore “safe” pedestrians that are on sidewalks, off-path crosswalks, and behind planned stop
-as shown in Figure \ref{fig:intersect}.
-Remaining pedestrians pose collision risk and we need to reactively slow down or stop for them.
-This is accomplished by sending stop message with pedestrian locations to path manager.
+We also have an In-Out Algorithm implemented via polygon intersection that can be used to ignore “safe” pedestrians
+Pedestrians that are on sidewalks, off-path crosswalks, and behind planned stops as shown in Figure \ref{fig:intersect} can be considered ``safe'' and are ignored.
+This is done by searching the same map database used for path planning.
+Remaining pedestrians pose collision risk and the vehicle needs to reactively slow down or stop for them.
+This is accomplished by sending stop message with pedestrian locations to the path manager.
 
-For Navigation Filtering we use an ADMA-G based Commercial automotive GPS/INS system.
-It receives RTK corrections via cell modem.
-It outputs Global position, global heading,
-body frame velocity and body frame acceleration to cm. level accuracy.
+Beyond the input subsystems, there are three other major components: a high-level planner, a low-level planner, and a software controller which governs engine speed, braking, and steering.
+The controller takes as an input a trajectory which is sampled at 10 Hz and spans 2 seconds, beginning at the moment of data transmission.
+This short-term trajectory is oriented in the vehicle body frame.
+\textbf{Citation for controller !!!!!}.
+The function of the low-level planner (``trajectory planner'') is two-fold:
+\begin{itemize}
+  \item Compute medium-range trajectories, as detailed in Sec. \ref{sec:trajectoryplanning}.
+  \item Sample medium-range trajectories for input to the controller, as detailed in Sec. \ref{sec:trajectoryplanning}
+\end{itemize}
+
+This work focuses on the high- and low-level planners.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Path Manager} \label{sec:pathmanager}
+
+
+The assumption on our work is that there is a unique mapping from a reference time $t_{ref}$ to a scalar value indicating the distance along the current path from the starting, $s$.
+system.
+This mapping breaks down when the vehicle is stopped (planned or unplanned), as there is no way to look up $t_{ref}(s)$ when multiple reference time solutions exist for certain path positions.
+The solution is to break the path into sub-paths at each stop location (i.e., stop sign) which is known a priori, and plan then execute them incrementally as shown in Fig. \ref{fig:segmentation}.
+This is the first function of the path manager.
+% , and can be broken down as follows:
+% \begin{itemize}
+% \item Send first sub-path to trajectory planner
+% \item Wait until completed.
+% \item Pause for fixed time, typically 2-3 second.
+% \item Continue waiting if any pedestrians are in the roadway ahead (along the intended path) within some fixed distance.
+% \item Send next sub-path to planner.
+% \item Repeat until end of path is reached.
+% \end{itemize}
+
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=0.5\columnwidth]{graphics/Subpaths.png}
+  \caption{
+    Segmentation of the path by path manager.
+    The trajectory generation is serially called on each segment colored differently.
+  }
+  \label{fig:segmentation}
+\end{figure}
+
+Both behaviors dictate that the path manager govern the operation of the trajectory planner.
+To enable both of these features, the path manager is implemented as a discrete state machine, as shown in Fig. \ref{fig:st}.
+
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=1.0\columnwidth]{graphics/StateMachineSimple.png}
+  \caption{State Transition Diagram}
+  \label{fig:st}
+\end{figure}
+
+The distinction between momentarily braking for a pedestrian which quickly leaves the roadway and coming to a full stop needs no formal logic.
+They follow the same state transition, and since both trajectory plans are extremely smooth, riders are rarely aware that any change took place.
+It should be noted that there is a brief waiting period before resuming NORMAL mode from RSTOP to ensure that no tracking errors occurred in the pedestrian detection algorithm.
+
+Next, the triggers for state transition will be described.
+They are implemented as a set of static and dynamic thresholds, which are depicted graphically in Fig. \ref{fig:react}.
+
+\begin{figure}[thpb]
+\centering
+  \subfigure[In NORMAL mode, RSTOP is now triggered.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}}
+  \\
+  \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_Replan.png}}
+  \\
+  \subfigure[PSTOP diagram showing bounds for reverting to NORMAL mode.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_Resume.png}}
+  \caption{Reactive behavior to pedestrian}
+  \label{fig:react}
+\end{figure}
+
+All detected pedestrians locations are compared against the high-resolution digital map, so that pedestrians which are not on the roadway or near an upcoming crosswalk are not considered.
+Then each pedestrian location is projected onto the total path in the same manner as described in Sec. \ref{sec:trajectorytracking}.
+Pedestrians which are on a different subpath than the vehicle are disregarded, as well as those which are behind the vehicle (i.e., $s_{ped} < s_{veh}$).
+All the pedestrians which remain pose a potential collision risk, however only the closest is considered for RSTOP.
+
+Next the nominal stopping distance $\Delta s_{RSTOP}$ must be computed given the vehicle's current location, speed, and forward acceleration.
+The procedure for doing this will be the same as the procedure for planning the RSTOP later with a few steps omitted, since the planning algorithm is extremely efficient.
+A 3 phase profile will be used, with end conditions $v_f=0, a_f=0$ and initial conditions set to the current state of the navigation filter.
+
+While it would seem that the segment solving procedure described in Sec. \ref{sec:3phase} could be applied to reactive stopping, this is not the case.
+As was mentioned previously, only one of $[L, v_f]$ may be rigidly enforced for a 3 phase profile, but not both, since no closed-form solution exists for that case.
+Normal planning enforces $L$ to avoid skewing segment boundaries within each subpath.
+However, reactive stopping requires that $v_f$ be enforced, and that we solve for $L$.
+Reformulating a new 3 phase jerk profile accordingly is a simple matter for a symbolic solver.
+%%% This is the brief way of wording the preceding three sentences.
+% The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as the hard constraint.
+
+Now appropriate values of $a_m^-$ and $j_m^-$ must be chosen to completely parameterize the trajectory.
+For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used.
+Note that a static buffer distance, $\Delta s_{buf}$ is added to ensure safety and comfort.
+RSTOP is triggered when $\Delta s_{RSTOP} + \Delta s_{buf} >= s_{ped} - s_{veh}$ and the actual available stopping distance $\Delta s_{avail} = s_{ped} - s_{veh}$ is computed.
+The trajectory is then recomputed with increasingly higher-magnitude values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} <= \Delta s_{avail}$.
+Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
+
+After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
+The path must now be truncated for 1D $\leftrightarrow$ 2D transformation.
+Within the trajectory tracker, all portions of the path leading up to the location of RSTOP triggering are removed, as well as the portions after the location which corresponds to $s_{veh} + \Delta s_{RSTOP}$
+This is depicted in Fig. \ref{fig:pathtostop}
+The vehicle now begins sampling from this trajectory and is executing a smooth reactive stop.
+
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_path_truncation.png}
+  \caption{Green color path is the one over which the car finds a trajectory to stop. please show green as dashes for b\&w printing ??????????? }
+  \label{fig:pathtostop}
+\end{figure}
+
+This procedure is repeated when the nearest pedestrian location changes by a value more than some static buffer $\Delta s_{replan} < \Delta s_{buf}$ compared to the location for which the current RSTOP planned.
+This value is typically set to 1 meter.
+Normal operation is resumed when the distance between the vehicle and the closest detected pedestrian satisfies $s_{ped} - s_{veh} > \Delta s_{resume} + \Delta s_{RSTOP}$. The static resume buffer should be set such that $\Delta s_{resume} > \Delta s_{buf} + \Delta s_{replan}$.
+The preceding buffers are depicted graphically in Fig. \ref{fig:react}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -333,7 +434,7 @@ There are 3 steps in the segmentation process:
   \item \emph{Clustering}, in which path points are grouped sequentially.
   \item \emph{Consolidation}, in which a single $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is selected for each segment.
 \end{enumerate}
-After this is done, the process described above in Section \ref{sec:jerkprofiles} may be applied to each of the segments.
+After this is done, the process described in Section \ref{sec:jerkprofiles} may be applied to each of the segments.
 
 The ceiling calculation is a minimax problem.
 Each of the 9 scalars is a minimum of several maxima computed from an arbitrary set of constraints.
@@ -491,7 +592,7 @@ The solution to this problem is known as trajectory tracking control, and will b
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Trajectory Tracking Control} \label{sec:trajectorytracking}
+\section{Trajectory Tracking} \label{sec:trajectorytracking}
 
 After planning has been performed, a reference signal must be regularly supplied to a control system in order for the vehicle to carry out the plan.
 This is known as tracking control.
@@ -536,102 +637,7 @@ Evaluating the $t(s_{veh})$ then yields the current reference time.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Path Manager} \label{sec:pathmanager}
 
-
-The assumption on our work is that there is a unique mapping from a reference time $t_{ref}$ to a scalar value indicating the distance along the current path, $s$.
-system.
-This mapping breaks down when we are stopped at a planned or reactive stop, as there is no way to do a $t_{ref}(s)$ lookup when multiple reference time solutions exist for certain path positions.
-The solution is to break the path into sub-paths at each stop location (i.e., stop sign) which is known a priori, and plan then execute them incrementally as shown in Fig. \ref{fig:segmentation}.
-This is the first function of the path manager, and can be broken down as follows:
-\begin{itemize}
-\item Send first sub-path to trajectory planner
-\item Wait until completed.
-\item Pause for fixed time, typically 2-3 second.
-\item Continue waiting if any pedestrians are in the roadway ahead (along the intended path) within some fixed distance.
-\item Send next sub-path to planner.
-\item Repeat until end of path is reached.
-\end{itemize}
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/Subpaths.png}
-  \caption{
-    Segmentation of the path by path manager.
-    The trajectory generation is serially called on each segment colored differently.
-  }
-  \label{fig:segmentation}
-\end{figure}
-
-Both behaviors dictate that the path manager govern the operation of the trajectory planner.
-To enable both of these features, the path manager is implemented as a discrete state machine, as shown in Fig. \ref{fig:st}.
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/StateMachineSimple.png}
-  \caption{State Transition Diagram}
-  \label{fig:st}
-\end{figure}
-
-The distinction between momentarily braking for a pedestrian which quickly leaves the roadway and coming to a full stop needs no formal logic.
-They follow the same state transition, and since both trajectory plans are extremely smooth, riders are rarely aware that any change took place.
-It should be noted that there is a brief waiting period before resuming NORMAL mode from RSTOP to ensure that no tracking errors occurred in the pedestrian detection algorithm.
-
-Next, the triggers for state transition will be described.
-They are implemented as a set of static and dynamic thresholds, which are depicted graphically in Fig. \ref{fig:react}.
-
-\begin{figure}[thpb]
-\centering
-  \subfigure[In NORMAL mode, RSTOP is now triggered.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}}
-  \\
-  \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_Replan.png}}
-  \\
-  \subfigure[PSTOP diagram showing bounds for reverting to NORMAL mode.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_Resume.png}}
-  \caption{Reactive behavior to pedestrian}
-  \label{fig:react}
-\end{figure}
-
-All detected pedestrians locations are compared against the high-resolution digital map, so that pedestrians which are not on the roadway or near an upcoming crosswalk are not considered.
-Then each pedestrian location is projected onto the total path in the same manner as described in Sec. \ref{sec:trajectorytracking}.
-Pedestrians which are on a different subpath than the vehicle are disregarded, as well as those which are behind the vehicle (i.e., $s_{ped} < s_{veh}$).
-All the pedestrians which remain pose a potential collision risk, however only the closest is considered for RSTOP.
-
-Next the nominal stopping distance $\Delta s_{RSTOP}$ must be computed given the vehicle's current location, speed, and forward acceleration.
-The procedure for doing this will be the same as the procedure for planning the RSTOP later with a few steps omitted, since the planning algorithm is extremely efficient.
-A 3 phase profile will be used, with end conditions $v_f=0, a_f=0$ and initial conditions set to the current state of the navigation filter.
-
-While it would seem that the segment solving procedure described in Sec. \ref{sec:3phase} could be applied to reactive stopping, this is not the case.
-As was mentioned previously, only one of $[L, v_f]$ may be rigidly enforced for a 3 phase profile, but not both, since no closed-form solution exists for that case.
-Normal planning enforces $L$ to avoid skewing segment boundaries within each subpath.
-However, reactive stopping requires that $v_f$ be enforced, and that we solve for $L$.
-Reformulating a new 3 phase jerk profile accordingly is a simple matter for a symbolic solver.
-%%% This is the brief way of wording the preceding three sentences.
-% The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as the hard constraint.
-
-Now appropriate values of $a_m^-$ and $j_m^-$ must be chosen to completely parameterize the trajectory.
-For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used.
-Note that a static buffer distance, $\Delta s_{buf}$ is added to ensure safety and comfort.
-RSTOP is triggered when $\Delta s_{RSTOP} + \Delta s_{buf} >= s_{ped} - s_{veh}$ and the actual available stopping distance $\Delta s_{avail} = s_{ped} - s_{veh}$ is computed.
-The trajectory is then recomputed with increasingly higher-magnitude values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} <= \Delta s_{avail}$.
-Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
-
-After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
-The path must now be truncated for 1D $\leftrightarrow$ 2D transformation.
-Within the trajectory tracker, all portions of the path leading up to the location of RSTOP triggering are removed, as well as the portions after the location which corresponds to $s_{veh} + \Delta s_{RSTOP}$
-This is depicted in Fig. \ref{fig:pathtostop}
-The vehicle now begins sampling from this trajectory and is executing a smooth reactive stop.
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/RSTOP_path_truncation.png}
-  \caption{Green color path is the one over which the car finds a trajectory to stop. please show green as dashes for b\&w printing ??????????? }
-  \label{fig:pathtostop}
-\end{figure}
-
-This procedure is repeated when the nearest pedestrian location changes by a value more than some static buffer $\Delta s_{replan} < \Delta s_{buf}$ compared to the location for which the current RSTOP planned.
-This value is typically set to 1 meter.
-Normal operation is resumed when the distance between the vehicle and the closest detected pedestrian satisfies $s_{ped} - s_{veh} > \Delta s_{resume} + \Delta s_{RSTOP}$. The static resume buffer should be set such that $\Delta s_{resume} > \Delta s_{buf} + \Delta s_{replan}$.
-The preceding buffers are depicted graphically in Fig. \ref{fig:react}.
 
 \section{Summary} \label{sec:summary}
 
