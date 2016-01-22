@@ -22,10 +22,10 @@
     * This work was performed at Honda Research Institute USA.
   }
   \thanks{
-    $^{1}$ Auburn University GAVLab. 1418 Wiggins Hall, Auburn, AL 36832. robertgcofield@gmail.com
+    $^{1}$ Auburn University GAVLab, 1418 Wiggins Hall, Auburn, AL 36832. \textit{robertgcofield@gmail.com}
   }
   \thanks{
-    $^{2}$ Honda Research Institute USA Inc, 375 Ravendale Drive, Mountain View, CA 94043. rgupta@hra.com
+    $^{2}$ Honda Research Institute USA Inc, 375 Ravendale Drive, Mountain View, CA 94043. \textit{rgupta@hra.com}
   }
 }
 
@@ -62,7 +62,7 @@ We have confirmed this with a test vehicle and pedestrians with over 100 hours o
 When planning trajectories for an autonomous ground vehicle operating on roadways, a typical goal is to minimize navigation time.
 It is common to employ the path-velocity decomposition to separate the two tasks so that they can be carried out sequentially or in parallel.
 % (i.e., path planning is performed prior to planning the speed that the vehicle will take along the chosen path).
-First is Path Planning, which involves computation of the shortest path.
+First is Path Planning, which involves computation of the optimal path.
 The second task is Trajectory Planning, which involves the computation of the fastest velocity profile that is appropriate for the scenario.
 
 Computation of a trajectory plan for traveling from one point to another is often guided by
@@ -177,35 +177,48 @@ This is accomplished by sending stop message with pedestrian locations to the pa
 Beyond the input subsystems, there are three other major components: a high-level planner, a low-level planner, and a software controller which governs engine speed, braking, and steering.
 The controller takes as an input a trajectory which is sampled at 10 Hz and spans 2 seconds, beginning at the moment of data transmission.
 This short-term trajectory is oriented in the vehicle body frame.
-\textbf{Citation for controller !!!!!}.
-The function of the low-level planner (``trajectory planner'') is two-fold:
-\begin{itemize}
-  \item Compute medium-range trajectories, as detailed in Sec. \ref{sec:trajectoryplanning}.
-  \item Sample medium-range trajectories for input to the controller, as detailed in Sec. \ref{sec:trajectoryplanning}
-\end{itemize}
+\textbf{Citation for controller ????}.
 
-This work focuses on the high- and low-level planners.
+The high-level planner is referred to as the ``path manager'', and performs decision-making as well as governing operation of the low-level planner.
+Its primary functions are:
+\begin{enumerate}
+  \item Stop the vehicle at stop signs and wait until the assosciated intersection is clear before continuing.
+  \item Reactively reduce speed or stop altogether for pedestrians which pose a collision risk, then continue when they are clear.
+  \item Govern the trajectory planner.
+\end{enumerate}
+The low-level planner is referred to as the ``trajectory planner'', and is responsible for quantifying the actions dictated by the path manager.
+Its primary functions are:
+\begin{itemize}
+  \item Compute medium-range trajectories for a given path.
+  \item Revise trajectories to react to pedestrians.
+  \item Sample the current trajectory for input to the controller.
+\end{itemize}
+This work focuses on the path manager (Sec. \ref{sec:pathmanager}) and the trajectory planner (Sec. \ref{sec:trajectoryplanning} \& Sec. \ref{sec:trajectorytracking}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Path Manager} \label{sec:pathmanager}
 
+The path manager is implemented as a discrete state machine, depicted in Fig. \ref{fig:st}.
+Each of the states is described below.
 
-The assumption on our work is that there is a unique mapping from a reference time $t_{ref}$ to a scalar value indicating the distance along the current path from the starting, $s$.
-system.
-This mapping breaks down when the vehicle is stopped (planned or unplanned), as there is no way to look up $t_{ref}(s)$ when multiple reference time solutions exist for certain path positions.
-The solution is to break the path into sub-paths at each stop location (i.e., stop sign) which is known a priori, and plan then execute them incrementally as shown in Fig. \ref{fig:segmentation}.
-This is the first function of the path manager.
-% , and can be broken down as follows:
-% \begin{itemize}
-% \item Send first sub-path to trajectory planner
-% \item Wait until completed.
-% \item Pause for fixed time, typically 2-3 second.
-% \item Continue waiting if any pedestrians are in the roadway ahead (along the intended path) within some fixed distance.
-% \item Send next sub-path to planner.
-% \item Repeat until end of path is reached.
-% \end{itemize}
+
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=1.0\columnwidth]{graphics/StateMachineSimple.png}
+  \caption{State Transition Diagram}
+  \label{fig:st}
+\end{figure}
+
+Many systems perform trajectory planning over a sliding window within the full path which progresses with the vehicle.
+This requires ... \textbf{something about computing actions through stop signs before it's necessary and how that's inefficient}.
+We propose to break the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:segmentation}, and  execute them incrementally.
+
+In the absence of pedestrians, the path manager cycles between PSTOP and NORMAL states.
+In NORMAL state, the path manager send the first subpath to the trajectory planner, which then plans and executes it before coming to a stop at the end of the subpath.
+In PSTOP mode, the path manager waits for a pre-set time duration before returning to NORMAL mode, where the next subpath is executed.
+When pedestrians are present, the transition from PSTOP to NORMAL is delayed until there are no pedestrians detected in the range denoted by $\Delta s_{resume}$.
 
 \begin{figure}[thpb]
   \centering
@@ -217,22 +230,14 @@ This is the first function of the path manager.
   \label{fig:segmentation}
 \end{figure}
 
-Both behaviors dictate that the path manager govern the operation of the trajectory planner.
-To enable both of these features, the path manager is implemented as a discrete state machine, as shown in Fig. \ref{fig:st}.
-
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/StateMachineSimple.png}
-  \caption{State Transition Diagram}
-  \label{fig:st}
-\end{figure}
+All detected pedestrians locations are compared against the high-resolution digital map, so that pedestrians which are not on the roadway or near an upcoming crosswalk are not considered.
+Then each pedestrian location is projected onto the total path in the same manner as described in Sec. \ref{sec:trajectorytracking}.
+Pedestrians which are on a different subpath than the vehicle are disregarded, as well as those which are behind the vehicle (i.e., $s_{ped} < s_{veh}$).
+All the pedestrians which remain pose a potential collision risk, however only the closest is considered for RSTOP.
 
 The distinction between momentarily braking for a pedestrian which quickly leaves the roadway and coming to a full stop needs no formal logic.
-They follow the same state transition, and since both trajectory plans are extremely smooth, riders are rarely aware that any change took place.
+They follow the same state transition, and since all trajectory plans are extremely smooth, riders are rarely aware that any change took place.
 It should be noted that there is a brief waiting period before resuming NORMAL mode from RSTOP to ensure that no tracking errors occurred in the pedestrian detection algorithm.
-
-Next, the triggers for state transition will be described.
-They are implemented as a set of static and dynamic thresholds, which are depicted graphically in Fig. \ref{fig:react}.
 
 \begin{figure}[thpb]
 \centering
@@ -241,14 +246,9 @@ They are implemented as a set of static and dynamic thresholds, which are depict
   \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_Replan.png}}
   \\
   \subfigure[PSTOP diagram showing bounds for reverting to NORMAL mode.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_Resume.png}}
-  \caption{Reactive behavior to pedestrian}
+  \caption{Graphical representation of static and dynamic thresholds used to trigger state transitions.}
   \label{fig:react}
 \end{figure}
-
-All detected pedestrians locations are compared against the high-resolution digital map, so that pedestrians which are not on the roadway or near an upcoming crosswalk are not considered.
-Then each pedestrian location is projected onto the total path in the same manner as described in Sec. \ref{sec:trajectorytracking}.
-Pedestrians which are on a different subpath than the vehicle are disregarded, as well as those which are behind the vehicle (i.e., $s_{ped} < s_{veh}$).
-All the pedestrians which remain pose a potential collision risk, however only the closest is considered for RSTOP.
 
 Next the nominal stopping distance $\Delta s_{RSTOP}$ must be computed given the vehicle's current location, speed, and forward acceleration.
 The procedure for doing this will be the same as the procedure for planning the RSTOP later with a few steps omitted, since the planning algorithm is extremely efficient.
