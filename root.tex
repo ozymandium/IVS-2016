@@ -55,7 +55,7 @@ Given a desired path, we present a novel online method for planning longitudinal
 to follow the urban path with turns and intersections while honoring traffic regulations such 
 as stop signs. Based on sensor data, our method updates the trajectory plan to safely avoid 
 pedestrians on the road by slowing or stopping.
-Our method has closed form solutions, and runs at 20 Hz ???????, and is efficient and reliable 
+Our method has closed form solutions, and runs at 20 Hz, and is efficient and reliable 
 for use in online planning. We have confirmed this with
 a test vehicle and pedestrians with 10s of hours of testing under autonomous driving conditions.
 
@@ -120,22 +120,23 @@ We then conclude and discuss future extensions.
 
 
 Our system architecture is shown in Figure \ref{fig:addreact}.
-????? describe ???
-
-
+There are 4 primary input components.
+A path planner determines the optimal course to take by searching a map database.
+This same map database is used to search for stop signs and provide their locations.
+A GPS/INS navigation filter provides estimates of global position, velocity vector, attitude, and acceleration.
+A pedestrian detection component \cite{Gepperth2013,Gepperth2014} leverages computer vision in conjunction with the navigation filter to estimate the global location of pedestrians which are walking in front of the vehicle.
+Techniques for designing these components are abundant in the literature and are addressed here.
 
 \begin{figure}[thpb]
   \centering
   \includegraphics[width=1.0\columnwidth]{graphics/MissingReactionPiece2.png}
   \caption{
-    Adding reactive behavior to trajectory planning.
-    \newline
-    \textbf{!!!!!!!!!!!!!!!!!!!!!!REDO THIS!!!!!!!!!!!!!!!!!!}
+   Primary system components. The ``Path Manager'' and ``Trajectory Planner'' scomponents (in blue) are presented herein.
   }
   \label{fig:addreact}
 \end{figure}
 
-We assume that we have access to Path Planner. This can be for example a service similar to
+We assume that we have access to Path Planner. For example, this can be a service similar to
 Google Maps except that it provides lane level maps. 
 We assume that the path planner operates independently from the trajectory planner and tracker.
 We also assume that we have a High
@@ -341,8 +342,8 @@ For instance, acceleration constraints may include a set of limits derived from 
 
 % How we actually did this.
 For the purposes of developing a simple example application, two constraints will be used for $v_{m,k}$: legal speed limit ($SL$, set constant for the whole path) and lateral acceleration limit $a_{B,y}^{max}$. 
-Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$.
-\emph{RG: $N_p$ not defined. this is the first place we introduce two subscripts. please explain what the two subscripts stand for in general for example in $a_{B,y}$ and $v_{m,k}$ ?????? }
+Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$, where $N_p$ is the number of waypoints in the full path.
+\emph{RG: this is the first place we introduce two subscripts. please explain what the two subscripts stand for in general for example in $a_{B,y}$ and $v_{m,k}$ ?????? }
 The value $\kappa_k$ denotes the path curvature at each point.
 For each path point, the value $v_{m,k}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$.
 
@@ -417,9 +418,6 @@ In the present example, this means that in the straight portions of the path $v_
 As a result, many of the curves will have a constant speed.
 For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
 
-
-The power of this algorithm is that any set and number of constraints may be used ... \emph{etc., etc., ...???????????}\tabularnewline
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Unified Solution} \label{sec:unifiedsolution}
@@ -441,10 +439,8 @@ Algorithm~\ref{alg:segmentspeedboundaryconditions} is used to set boundary speed
       \State $\mathbf{v}_p \gets \mathbf{v}_m$ \Comment{Initialize targets as ceilings}
       \State $\mathbf{v}_{p,0} \gets v_i$ \Comment{Set starting speed to current}
       \State $\mathbf{v}_p = [\mathbf{v}_p, 0]$ \Comment{Add final speed of 0}
-      \For{$k = 1, ..., N_s-1$}
+      \For{$i = 1, ..., N_s-1$}
         \If{$v_{m,i+1} > v_{m,i}$}
-          \State $v_{p,i+1} \gets v_{m,i}$
-        \ElsIf{$v_{m,i+1} > v_{m,i}$}
           \State $v_{p,i+1} \gets v_{m,i+1}$
         \Else
           \State $v_{p,i+1} \gets v_{m,i}$
@@ -452,11 +448,13 @@ Algorithm~\ref{alg:segmentspeedboundaryconditions} is used to set boundary speed
       \EndFor
     \EndProcedure
   \end{algorithmic}
-\caption{Algorithm to set speed boundary conditions for interior path segments. We iterate over ??? in line 5 to set ?????? }
+  \caption{
+    Algorithm to set speed boundary conditions for interior path segments.
+    Having consolidated the waypoints in to a set of path segments, the maximum allowable speed for each segment, $v_{m,i}$ is known.
+    This algorithm uses the set of $\mathbf{v_{m}}$ for all segments to choose the highest allowable start and end speeds for each path segment.
+  }
 \label{alg:segmentspeedboundaryconditions}
 \end{figure}
-
-\emph{RG: lines 6 and 8 in algorithm fire ate same. please check.??????}
 
 % talk about control points
 Now each segment is solved individually.
@@ -482,7 +480,7 @@ For each segment with $M$ jerk phases, the following is produced:
 After stitching together control point vectors for time, position, and its derivatives, all information required to have a trajectory plan is now in place.
 Since $j(t)$ is piecewise constant, it may be integrated to determine an instantaneous trajectory at any moment in time.
 To aid in this, univariate splines are created with time as the independent variable, using the control points as knots.
-Position along the path $s(t)$ takes the form of a cubic Hermite spline, constructed using the speed control points $v_{B,x}(t)$ to set the derivatives.
+Position along the path as a function of reference plan time, $s(t)$, takes the form of a cubic Hermite spline, constructed using the speed control points $v_{B,x}(t)$ to set the derivatives.
 Speed along the path $v_{B,x}(t)$ takes the form of a quadratic Hermite spline, with the acceleration control points $a_{B,x}(t)$ used to set the derivatives at every knot.
 Acceleration $a_{B,x}(t)$ is piecewise linear, so lookup is a trivial matter.
 The same applies to $j_{B,x}(t)$, which may be implemented with a simple table.
@@ -517,7 +515,7 @@ From there it is a matter of simple geometry to transform these values into the 
 % \subsection{Path Projection} \label{sec:pathprojection}
 
 Several algorithms exist to find the optimal projection of the target vehicle's present kinematic state (position, velocity, and acceleration vectors) onto the path.
-A simple approximation, which works well for the path shown in Figure~\ref{fig:1Dto2DandSegmentation} ???????? is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a ``link''). \emph{ RG: please show link in figure ???????}
+A simple approximation is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a ``link'', and is depicted in Fig. \ref{fig:cartos}).
 Projections which lie outside of the link's two constituent path points are snapped to that which is nearest.
 The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection $\mathbf{r}_p$.
 Any number of modifications can be made using heading, velocity vectors, and previous information to allow this method to be extended to complex paths which overlap or self-intersections.
@@ -530,7 +528,7 @@ Other, more accurate, approximations which work well include cubic splines, arc 
 
 Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to look up $v_{B,x}(t_{veh})$, $a_{B,x}(t_{veh})$, and $j_{B,x}(t_{veh})$.
 Additionally, it is also needed to sample $s(t)$ at intervals ahead of the vehicle.
-Since it is known that $s(t)$ is piecewise cubic, $t(s)$ \emph{RG: please define $t(s)$ ?????????} may be approximated as cubic if a spline is being constructed from knots which have a very high resolution.
+Since it is known that $s(t)$ is piecewise cubic, reference time as a function of vehicle position along the path, $t(s)$,F may be approximated as cubic if a spline is being constructed from knots which have a very high resolution.
 In this case, an $s(t)$ spline has already been created using the control points from the unified planning process described in Section~\ref{sec:unifiedsolution}, and it is now resampled at $\Delta t = 0.01 sec$.
 This yields two vectors $s'$ and $t'$ which are then used to create a univariate cubic $t(s)$ spline.
 Evaluating the $t(s_{veh})$ then yields the current reference time.
@@ -611,8 +609,6 @@ However, reactive stopping requires that $v_f$ be enforced, and that we solve fo
 Reformulating a new 3 phase jerk profile accordingly is a simple matter for a symbolic solver.
 %%% This is the brief way of wording the preceding three sentences.
 % The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as the hard constraint.
-
-\textbf{3 phase full spec profile figure?}. 
 
 Now appropriate values of $a_m^-$ and $j_m^-$ must be chosen to completely parameterize the trajectory.
 For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used.

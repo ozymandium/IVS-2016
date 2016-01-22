@@ -6,3 +6,4 @@ build
 *.m~
 *.bbl
 *.blg
+.fuse_*
