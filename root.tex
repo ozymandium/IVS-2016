@@ -213,7 +213,7 @@ Each of the states is described below.
 
 Many systems perform trajectory planning over a sliding window within the full path which progresses with the vehicle.
 This requires ... \textbf{something about computing actions through stop signs before it's necessary and how that's inefficient}.
-We propose to break the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:segmentation}, and  execute them incrementally.
+We propose to break the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:subpathdivision}, and  execute them incrementally.
 
 In the absence of pedestrians, the path manager cycles between PSTOP and NORMAL states.
 In NORMAL state, the path manager send the first subpath to the trajectory planner, which then plans and executes it before coming to a stop at the end of the subpath.
@@ -224,10 +224,10 @@ When pedestrians are present, the transition from PSTOP to NORMAL is delayed unt
   \centering
   \includegraphics[width=0.5\columnwidth]{graphics/Subpaths.png}
   \caption{
-    Segmentation of the path by path manager.
-    The trajectory generation is serially called on each segment colored differently.
+    Dividing the path into subpaths at stop signs.
+    The trajectory generation is serially called on each segment which is colored differently here.
   }
-  \label{fig:segmentation}
+  \label{fig:subpathdivision}
 \end{figure}
 
 All detected pedestrians locations are compared against the high-resolution digital map, so that pedestrians which are not on the roadway or near an upcoming crosswalk are not considered.
@@ -461,8 +461,9 @@ Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm.
 \begin{figure}[thpb]
   \centering
   \subfigure[
-    Clustering output for a short path when using an algorithm which draws segment boundaries around curves.
-    Portions in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.176 m/s (25 mi/hr).
+    Result of dividing a single subpath into separate segments.
+    The clustering algorithm used here sets segments boundaries before and after curves.
+    The subpath segments in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.176 m/s (25 mi/hr).
   ]{
     \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
   }
@@ -474,14 +475,15 @@ Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm.
   % }
   % \\
   \subfigure[
-    Example of $v_m$ consolidation for simple univariate path clustering which corresponds to the path shown above.
+    Example of how the subpath's segment boundaries are determined, as well as how $v_m$ is consolidated to determine the speed ceiling for each segment.
+    The x-axis corresponds to distance along the subpath above.
     The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan.
     The longitudinal speed required to adhere to lateral acceleration limits is shown in red.
     The resultant speed ceiling is shown in blue.
   ]{
   \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
   }
-  \caption{Path segmentation and speed ceiling consolidation procedures.}
+  \caption{Dividing a subpath into segments and determining speed ceilings for each segment.}
   \label{fig:1Dto2DandSegmentation}
 \end{figure}
 
