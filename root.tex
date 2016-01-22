@@ -273,9 +273,82 @@ Elevation changes will not be addressed here.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
 
 Prescribed initial and end conditions for position, speed, and acceleration must also be honored.
+All planning is longitudinal; that is, speed is the primary focus, and we assume that the control subsystem will ensure that the vehicle follows the prescribed path.
 This means that the desired trajectory plan may be mapped into one dimension using curvilinear coordinates to significantly simplify the solution.
 We show how two dimensional concerns (specifically cornering speeds for this work) are expressed in one dimension to guide planning.
-All planning is longitudinal; that is, speed is the primary focus, and we assume that the control subsystem will ensure that the vehicle follows the prescribed path.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Path Segmentation} \label{sec:pathsegmentation}
+
+Our approach to fitting appropriate jerk profiles to complex subpaths is to further break each subpath into segments which have very simple shape.
+Once this is done, each segment can be compared to a library of possible jerk profiles to find a good match.
+Each segment will be defined by the vector $\mathbf{b}  = [v_i, a_i, L, v_m, v_f]$, being initial speed, initial acceleration, the total distance, speed limit, and the final speed, respectively.
+Additionally, the desired positive and negative acceleration $\mathbf{a}_m = [a^+_m , a^-_m]$ and the desired positive and negative jerk $\mathbf{j}_m = [j^+_m , j^-_m]$ for must be defined for each segment.
+
+The segmentation process proceeds as follows:
+\begin{enumerate} \label{asdf}
+  \item \emph{Ceiling calculation}, where $v_m$, $\mathbf{a}_m$, and $\mathbf{j}_m$ are found for every point in the given subpath.
+  \item \emph{Clustering}, in which subpath points are grouped sequentially and the segment boundaries are determined..
+  \item \emph{Consolidation}, in which a single $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is selected for each segment.
+\end{enumerate}
+After this is done, the process described in Section \ref{sec:jerkprofiles} may be applied to each of the segments so that a plan of jerk vs. time may be generated.
+
+The ceiling calculation is a minimax problem.
+Each of the 9 scalars is a minimum of several maxima computed from an arbitrary set of constraints.
+For instance, acceleration constraints may include a set of limits derived from friction coefficients at every point along the subpath.
+
+% How we actually did this.
+For the purposes of developing a simple example application, two constraints will be used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{B,y}^{max}$. 
+Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$, where $N_p$ is the number of waypoints in the subpath.
+The value $\kappa_k$ denotes the path curvature at each point.
+For each pathpath point, the value $v_{m,k}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$.
+
+This information is used to choose the segment boundaries in the clustering step.
+Any number of clustering algorithms may be used here, and prudent choice of segment boundaries is arguably one of the most critical pieces of trajectory planning process.
+For the present example, we will choose a simple univariate heuristic which essentially identifies curves in the roadway using only the speed ceiling.
+Each time that $v_{m,k} < SL$ becomes true, a curve is beginning, and a segment boundary is drawn.
+Each time that $v_{m,k} = SL$ is once again true, the current curve has ended, and another segment boundary is drawn.
+Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm. 
+
+\begin{figure}[thpb]
+  \centering
+  \subfigure[
+    Result of dividing a single subpath into separate segments.
+    The clustering algorithm used here sets segments boundaries before and after curves.
+    The subpath segments in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.176 m/s (25 mi/hr).
+  ]{
+    \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
+  }
+  \\
+  \subfigure[
+    Example of how the subpath's segment boundaries are determined, as well as how $v_m$ is consolidated to determine the speed ceiling for each segment.
+    The x-axis corresponds to distance along the subpath above.
+    The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan.
+    The longitudinal speed required to adhere to lateral acceleration limits is shown in red.
+    The resultant speed ceiling is shown in blue.
+  ]{
+  \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
+  }
+  \caption{Dividing a subpath into segments and determining speed ceilings for each segment.}
+  \label{fig:1Dto2DandSegmentation}
+\end{figure}
+
+% need better notation here.
+In the consolidation step, a single set of $\mathbf{g}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ must be calculated for each segment using the values corresponding to each of the waypoints which comprise the segment in question.
+The minimum of scalar across all constituent points is chosen.
+While not time optimal, it does ensure that no constraints are violated while still keeping the number of total segments low.
+In the present example, this means that in the straight portions of the subpath $v_m = SL$ and in the curves $v_m$ is set to the value required to obtain $a_{B,y}^{max}$ for the entirety of the curve.
+As a result, many of the curves will have a constant speed.
+For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are initially all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Fitting Jerk Profiles to Each Segment} \label{sec:jerkprofiles}
+
+To introduce the process of computing a jerk profile for each segment, let us consider the case in which a vehicle needs to travel some arbitrary distance ahead.
+The vehicle is moving at some small initial speed and needs to accelerate to some traveling speed, maintain that speed for some distance, then brake to a stop at a prescribed end location.
+Figure \ref{fig:full7phasespec} shows this trajectory over time.
 
 \begin{figure}[thpb]
   \centering
@@ -286,20 +359,13 @@ All planning is longitudinal; that is, speed is the primary focus, and we assume
   \label{fig:full7phasespec}
 \end{figure}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Jerk Profiles} \label{sec:jerkprofiles}
-
-Consider, as a starting point, the case in which a vehicle is moving at some small initial speed and needs to accelerate to some traveling speed, maintain that speed for some distance, then brake to a stop at a prescribed end location.
-Figure \ref{fig:full7phasespec} shows this trajectory over time.
 The problem is defined by the vector of known values $\mathbf{b}  = [v_i, a_i, L, v_m, v_f]$, being initial speed, initial acceleration, the total distance, speed limit, and the final speed, respectively.
-It is assumed that the final forward acceleration will be zero.
-If the magnitude of the desired peak acceleration and jerk ($a_m$ and $j_m$, respectively) are known, then a profile with $M$ jerk phases (7 in this case) can be generated by solving for the time intervals $[\Delta t_1, ..., \Delta t_M]$.
-Jerk and peak acceleration may be different when reducing speed versus increasing speed to more closely mirror human driving behavior \emph{Citation}.
-The remaining parameters yet to be set now become $\mathbf{a}_m = [a^+_m , a^-_m]$ and $\mathbf{j}_m = [j^+_m , j^-_m]$.
+Final forward acceleration is set to zero.
+If $\mathbf{a}_m = [a^+_m , a^-_m]$ and $\mathbf{j}_m = [j^+_m , j^-_m]$. are known, then a profile with $M$ jerk phases (7 in this case) can be generated by solving for the time intervals $[\Delta t_1, ..., \Delta t_M]$.
+Jerk and peak acceleration may be different when reducing speed versus increasing speed to more closely mirror human driving behavior.
 As we show later, peak acceleration and jerk must sometimes be modified to obtain physically possible time intervals.
 To enable this, ranges of acceptable longitudinal jerk and acceleration $\mathbf{a}^{max}_m = [a^{+,max}_m , a^{-,max}_m]$ and $\mathbf{j}^{max}_m = [j^{+,max}_m , j^{-,max}_m]$ are set according to the relation in Eqs. \ref{eq:am} and \ref{eq:jm}.
-This is computed for every point along the path.
+This is computed for every point along the subpath.
 In the simplest case, one value for each of the quantities expressed in these relations may be chosen for the entire path.
 
 \begin{equation}
@@ -396,104 +462,6 @@ A change from one speed to another.
 All of the above profiles are composed of some combination of a 3 phase profile and a $j_k = 0$ phase.
 This presents a difficulty in that either $L$ or $v_f$ may be enforced, but not both (there is no solution to enforce both).
 As such, this profile is chosen only for a segment in which it is impossible to completely arrive at the end speed given the initial speed, so fitting one of the two 4 phase profiles has been attempted and subsequently failed.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Path Segmentation} \label{sec:pathsegmentation}
-
-% make sure to incorporate extensibility to other constraints
-The goal of the segmentation process is to divide a given path into multiple portions where each has a uniform upper limit on speed, acceleration, and braking.
-There are 3 steps in the segmentation process:
-\begin{enumerate} \label{asdf}
-  \item \emph{Ceiling calculation}, where $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ are found for every point in the given path.
-  \item \emph{Clustering}, in which path points are grouped sequentially.
-  \item \emph{Consolidation}, in which a single $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is selected for each segment.
-\end{enumerate}
-After this is done, the process described in Section \ref{sec:jerkprofiles} may be applied to each of the segments.
-
-The ceiling calculation is a minimax problem.
-Each of the 9 scalars is a minimum of several maxima computed from an arbitrary set of constraints.
-For instance, acceleration constraints may include a set of limits derived from friction coefficients at every point along the path.
-
-% How we actually did this.
-For the purposes of developing a simple example application, two constraints will be used for $v_{m,k}$: legal speed limit ($SL$, set constant for the whole path) and lateral acceleration limit $a_{B,y}^{max}$. 
-Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_k}$ for $k = 1, ..., N_p$, where $N_p$ is the number of waypoints in the full path.
-\emph{RG: this is the first place we introduce two subscripts. please explain what the two subscripts stand for in general for example in $a_{B,y}$ and $v_{m,k}$ ?????? }
-The value $\kappa_k$ denotes the path curvature at each point.
-For each path point, the value $v_{m,k}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$.
-
-This information is used to choose the segment boundaries in the clustering step.
-Any number of clustering algorithms may be used here, and prudent choice of segment boundaries is arguably one of the most critical pieces of trajectory planning process.
-For the present example, we will choose a simple univariate heuristic which essentially identifies curves in the roadway.
-Each time that $v_{m,k} < SL$ becomes true, a curve is beginning, and a segment boundary is drawn.
-Each time that $v_{m,k} = SL$ is once again true, the current curve has ended, and another segment boundary is drawn.
-Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm. 
-
-% \begin{figure}[thpb]
-%   \centering
-%   \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
-%   \caption{
-%     Clustering output for a short path when using an algorithm which draws segment boundaries around curves.
-%     Portions in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.176 m/s (25 mi/hr).
-%   }
-%   \label{fig:course_highlight_turns}
-% \end{figure}
-
-% \begin{figure}[thpb]
-%   \centering
-%   \includegraphics[width=1.0\columnwidth]{graphics/1Dsegmentation.png}
-%   \caption{Showing the path projected onto the one dimensional s coordinate system}
-%   \label{fig:scoord}
-% \end{figure}
-
-% \begin{figure}[thpb]
-%   \centering
-%   \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
-%   \caption{
-%     Example of $v_m$ consolidation for simple univariate path clustering which corresponds the the path shown in Figure \ref{fig:course_highlight_turns}.
-%     The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan.
-%     The longitudinal speed required to adhere to lateral acceleration limits is shown in red.
-%     The resultant speed ceiling is shown in blue.
-%   }
-%   \label{fig:consolidation_speed_ceiling}
-% \end{figure}
-
-\begin{figure}[thpb]
-  \centering
-  \subfigure[
-    Result of dividing a single subpath into separate segments.
-    The clustering algorithm used here sets segments boundaries before and after curves.
-    The subpath segments in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.176 m/s (25 mi/hr).
-  ]{
-    \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
-  }
-  \\
-  % \subfigure[
-  %   Showing the path projected onto the one dimensional s coordinate system
-  % ]{
-  %   \includegraphics[width=1.0\columnwidth]{graphics/1Dsegmentation.png}
-  % }
-  % \\
-  \subfigure[
-    Example of how the subpath's segment boundaries are determined, as well as how $v_m$ is consolidated to determine the speed ceiling for each segment.
-    The x-axis corresponds to distance along the subpath above.
-    The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan.
-    The longitudinal speed required to adhere to lateral acceleration limits is shown in red.
-    The resultant speed ceiling is shown in blue.
-  ]{
-  \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
-  }
-  \caption{Dividing a subpath into segments and determining speed ceilings for each segment.}
-  \label{fig:1Dto2DandSegmentation}
-\end{figure}
-
-% need better notation here.
-In the consolidation step, a single set of $\mathbf{g}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ must be calculated for each segment using the values corresponding to each of the path points which comprise the segment in question.
-The minimum of scalar across all constituent points is chosen.
-While not time optimal, it does ensure that no constraints are violated while still keeping the number of total segments low.
-In the present example, this means that in the straight portions of the path $v_m = SL$ and in the curves $v_m$ is set to the value required to obtain $a_{B,y}^{max}$ for the entirety of the curve.
-As a result, many of the curves will have a constant speed.
-For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
