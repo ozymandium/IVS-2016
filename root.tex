@@ -260,21 +260,22 @@ Planning and executing the trajectory for coming to a halt is detailed in Sec. \
 This procedure is repeated when the nearest pedestrian location changes by a value more than some static buffer $\Delta s_{replan} < \Delta s_{buf}$ compared to the location for which the current RSTOP planned.
 This value is typically set to 1 meter.
 Normal operation is resumed when the distance between the vehicle and the closest detected pedestrian satisfies $s_{ped} - s_{veh} > \Delta s_{resume} + \Delta s_{RSTOP}$. The static resume buffer should be set such that $\Delta s_{resume} > \Delta s_{buf} + \Delta s_{replan}$.
-The preceding buffers are depicted graphically in Fig. \ref{fig:react}.
+The preceding quantities are depicted graphically in Fig. \ref{fig:react}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Trajectory Planning} \label{sec:trajectoryplanning}
 
-The objective of trajectory planning is to take a 2 dimensional (horizontal plane) path, and compute a series of constant jerk intervals for motion along the length of the path which is time optimal yet still falls within constraints on speed, acceleration, and jerk.
+The task trajectory planning in this context is to take a 2 dimensional (horizontal plane) set of waypoints from the path manager, and compute a series of constant jerk intervals for motion along the length of the path.
+This trajectory must be time optimal yet still fall within constraints on speed, acceleration, and jerk.
 Elevation changes will not be addressed here.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
 
 Prescribed initial and end conditions for position, speed, and acceleration must also be honored.
-This means that the desired trajectory plan is one dimensional, so using curvilinear coordinates will significantly simplify the solution.
+This means that the desired trajectory plan may be mapped into one dimension using curvilinear coordinates to significantly simplify the solution.
 We show how two dimensional concerns (specifically cornering speeds for this work) are expressed in one dimension to guide planning.
-All planning is longitudinal; that is, speed is the primary focus, and we assume that a separate yaw controller will ensure that the vehicle follows the prescribed path.
+All planning is longitudinal; that is, speed is the primary focus, and we assume that the control subsystem will ensure that the vehicle follows the prescribed path.
 
 \begin{figure}[thpb]
   \centering
@@ -413,7 +414,6 @@ After this is done, the process described in Section \ref{sec:jerkprofiles} may 
 The ceiling calculation is a minimax problem.
 Each of the 9 scalars is a minimum of several maxima computed from an arbitrary set of constraints.
 For instance, acceleration constraints may include a set of limits derived from friction coefficients at every point along the path.
-
 
 % How we actually did this.
 For the purposes of developing a simple example application, two constraints will be used for $v_{m,k}$: legal speed limit ($SL$, set constant for the whole path) and lateral acceleration limit $a_{B,y}^{max}$. 
