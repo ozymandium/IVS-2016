@@ -105,7 +105,7 @@ We also describe other subsystems that our system needs to work with, and planne
 Section \ref{sec:pathmanager} describes the high level Path Manager that calls the trajectory planner as necessary to 
 exhibit reactive behavior and stop for pedestrians that may appear on the road.
 In Section \ref{sec:trajectoryplanning}, we describe trajectory planning which takes a 2D path and generates a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
-We explain how we handle intersections, turns in the road and planned stops due to stop signs (that have already been marked in the map).
+We explain how we handle intersections, turns in the road and planned stops due to stop signs.
 We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
 Once a trajectory plan is formulated, it must be utilized online to send the reference signal to the controllers that govern steering, braking, and engine speed.
 This is the trajectory tracking problem, which is discussed in Section \ref{sec:trajectorytracking}.
@@ -223,7 +223,7 @@ Each of the states is described below.
 
 Many systems perform trajectory planning over a sliding window within the full path which progresses with the vehicle.
 This requires ... \textbf{something about computing actions through stop signs before it's necessary and how that's inefficient}.
-We propose to break the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:subpathdivision}, and call Trajectory Planner for each sub-path incrementally.
+We break the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:subpathdivision}, and call Trajectory Planner for each sub-path in the path.
 
 Prescribed initial and end conditions for position, speed, and acceleration must be honored.
 All planning is longitudinal; that is, speed is the primary focus, and we assume that the control subsystem will ensure that the vehicle follows the prescribed path.
@@ -240,17 +240,17 @@ When pedestrians are present, the transition from PSTOP to NORMAL is delayed unt
   \includegraphics[width=0.5\columnwidth]{graphics/Subpaths.png}
   \caption{
     Dividing the path into sub-paths at stop signs.
-    The trajectory generation is serially called on each sub-path which are colored differently here.
+    The Trajectory Planner is serially called for each sub-path shown in different color.
   }
   \label{fig:subpathdivision}
 \end{figure}
 
 All detected pedestrian locations are compared against the high-resolution digital map, so that pedestrians that are not on the roadway or near an upcoming crosswalk are not considered.
 Then each pedestrian location is projected onto the total path in the same manner as described in Sec. \ref{sec:trajectorytracking}.
-Pedestrians that are on a different subpath than the vehicle are disregarded, as well as those which are behind the vehicle (i.e., $s_{ped} < s_{veh}$).
+Pedestrians that are on a different subpath than the vehicle, and behind the vehicle are disregarded (i.e., $s_{ped} < s_{veh}$).
 All the remaining pedestrians pose potential collision risks, however only the closest pedestrian is considered for RSTOP.
 
-The distinction between momentarily braking for a pedestrian which quickly leaves the roadway and coming to a full stop needs no formal logic.
+The distinction between momentarily braking for a pedestrian that quickly leaves the roadway and coming to a full stop needs no formal logic.
 They follow the same state transition, and since all trajectory plans are extremely smooth, riders are rarely aware that any change took place.
 It should be noted that there is a brief waiting period before resuming NORMAL mode from RSTOP to ensure that no tracking errors occurred in the pedestrian detection algorithm.
 
@@ -291,30 +291,30 @@ Integrating piecewise constant jerk over time yields acceleration which is piece
 
 \subsection{Path Segmentation} \label{sec:pathsegmentation}
 
-Our approach to fitting appropriate jerk profiles to complex sub-paths is to further break each subpath into segments which have very simple shape.
+Our approach to fitting appropriate jerk profiles to complex sub-paths is to further break each sub-path into segments which have very simple shape.
 Once this is done, each segment can be compared to a library of possible jerk profiles to find a good match.
 Each segment will be defined by the vector $\mathbf{b}  = [v_i, a_i, L, v_m, v_f]$, being initial speed, initial acceleration, the total distance, speed limit, and the final speed, respectively.
 Additionally, the desired positive and negative acceleration $\mathbf{a}_m = [a^+_m , a^-_m]$ and the desired positive and negative jerk $\mathbf{j}_m = [j^+_m , j^-_m]$ for must be defined for each segment.
-A path is then a set of $N_s$ segments, each of which is defined by a set of parameters $\mathbf{b}_{k_s}$, $\mathbf{a}_{m,k_s}$, and $\mathbf{j}_{m,k_s}$ where $k_S = 1 ... N_s$ and can be solved individually in sequence.
+A sub-path is then a set of $N_s$ segments, each of which is defined by a set of parameters $\mathbf{b}_{k_s}$, $\mathbf{a}_{m,k_s}$, and $\mathbf{j}_{m,k_s}$ where $k_S = 1 ... N_s$ and can be solved individually in sequence.
 
 
 The segmentation process proceeds as follows:
 \begin{enumerate} \label{asdf}
   \item \emph{Ceiling calculation}, where $v_m$, $\mathbf{a}_m$, and $\mathbf{j}_m$ 
 %$initial/final speeds, speed limit, peak acceleration and jerk 
-are found for every point in the given subpath.
-  \item \emph{Clustering}, in which subpath points are grouped sequentially and the segment boundaries are determined..
+are found for every point in the given sub-path.
+  \item \emph{Clustering}, in which sub-path points are grouped sequentially and the segment boundaries are determined..
   \item \emph{Consolidation}, in which a single $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is selected for each segment.
 \end{enumerate}
-After this is done, the process described in Section \ref{sec:jerkprofiles} may be applied to each of the segments so that a plan of jerk vs. time may be generated.
+After this is done, the process described in next section may be applied to each of the segments so that a plan of jerk vs. time may be generated.
 
 The ceiling calculation is a minimax problem.
 Each of the 9 scalars \textbf{RG: please explain 9 scalars ???} is a minimum of several maxima computed from an arbitrary set of constraints.
-For instance, acceleration constraints may include a set of limits derived from friction coefficients at every point along the subpath.
+For instance, acceleration constraints may include a set of limits derived from friction coefficients at every point along the sub-path.
 
 % How we actually did this.
 For the purposes of developing a simple example application, two constraints will be used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{B,y}^{max}$. 
-Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k_p}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_{k_p}}$ for $k_p = 1, ..., N_p$, where $N_p$ is the number of waypoints in the subpath.
+Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k_p}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_{k_p}}$ for $k_p = 1, ..., N_p$, where $N_p$ is the number of waypoints in the sub-path.
 The value $\kappa_{k_P}$ denotes the path curvature at each point.
 For each sub-path point, the value $v_{m,k_p}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$.
 
@@ -323,25 +323,29 @@ Any number of clustering algorithms may be used here, and prudent choice of segm
 For the present example, we will choose a simple univariate heuristic which essentially identifies curves in the roadway using only the speed ceiling.
 Each time that $v_{m,k} < SL$ becomes true, a curve is beginning, and a segment boundary is drawn.
 Each time that $v_{m,k} = SL$ is once again true, the current curve has ended, and another segment boundary is drawn.
-Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm. 
 
+Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm. 
+We start with a sub-path which is similar in structure to the sub-path between the stop signs in Fig. \ref{fig:subpathdivision}. This sub-path is broken up into five segments as shown in Fig. \ref{fig:1Dto2DandSegmentationa}, three shown in blue corresponding to straight line part of the sub-path and two shown in red corresponding to turns in the sub-path. As shown in Fig \ref{fig:1Dto2DandSegmentationb} we use the speed limit of 11.1 m/sec for the straight line segments and 3.0 m/sec for the turn segments to determine the segment boundaries. 
+ 
 \begin{figure}[thpb]
   \centering
   \subfigure[
-    Result of dividing a single subpath into separate segments.
+    Result of dividing a single sub-path into separate segments.
     The clustering algorithm used here sets segments boundaries before and after curves.
-    The subpath segments in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.176 m/s (25 mi/hr).
+    The sub-path segments in red indicate areas where the longitudinal speed required to adhere to lateral acceleration limits is below the legal speed limit of 11.1 m/s (25 mi/hr).
   ]{
+  \label{fig:1Dto2DandSegmentationa}
     \includegraphics[width=0.8\columnwidth]{graphics/course_highlighted_turns.png}
   }
   \\
   \subfigure[
     Example of how the sub-path's segment boundaries are determined, as well as how $v_m$ is consolidated to determine the speed ceiling for each segment.
     The x-axis corresponds to distance along the subpath above.
-    The legal speed limit of 11.176 m/s (25 mi/hr) is shown in cyan.
+    The legal speed limit of 11.1 m/s (25 mi/hr) is shown in cyan.
     The longitudinal speed required to adhere to lateral acceleration limits is shown in red.
     The resultant speed ceiling is shown in blue.
   ]{
+  \label{fig:1Dto2DandSegmentationb}
   \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
   }
   \caption{Dividing a subpath into segments and determining speed ceilings for each segment.}
@@ -358,13 +362,13 @@ In the present example, this means that in the straight portions of the subpath 
 As a result, many of the curves will have a constant speed.
 For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are initially all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
 
-A jerk vs. time profile will be fit to each segment using the algorithm in Section \ref{sec:jerkprofiles}.
+A jerk vs. time profile is fit to each segment using the algorithm in the next section.
 Speed and acceleration must be continuous between each segment, but only the corresponding speed ceilings have been found, so the start and end conditions for each segment must be determined.
-The values of $a_i$ and $v_i$ for the first segment are set to be the value which is currently reported from sensor data.
+The values of $a_i$ and $v_i$ for the first segment are set to the value currently reported from sensor data.
 Since the final acceleration is to be set to zero for all profiles, each subsequent segment may begin with $a_i = 0$.
 For the final segment, setting $v_f = 0$ is prudent unless the scenario demands otherwise.
 Algorithm~\ref{alg:segmentspeedboundaryconditions} is used to set boundary speed conditions for the interior segments. 
-Continuity of position, speed, and acceleration is the primary goal of this process.
+Primary goal of this process is the continuity of position, speed, and acceleration.
 
 \begin{figure}
   \begin{algorithmic}[1]
@@ -554,7 +558,7 @@ Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition e
 
 % After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
 The path must now be truncated for 1D $\leftrightarrow$ 2D transformation.
-Within the trajectory tracker, all portions of the path leading up to the location of RSTOP triggering are removed, as well as the portions after the location which corresponds to $s_{veh} + \Delta s_{RSTOP}$
+Within the trajectory tracker, all portions of the path leading up to the location of RSTOP triggering are removed, as well as the portions after the location which corresponds to $s_{veh} + \Delta s_{RSTOP}$.
 % This is depicted in Fig. \ref{fig:pathtostop}
 The vehicle now begins sampling from this trajectory and is executing a smooth reactive stop.
 
@@ -574,7 +578,7 @@ The solution to this problem is known as trajectory tracking, and will be discus
 
 \section{Trajectory Tracking} \label{sec:trajectorytracking}
 
-After planning has been performed, a reference signal must be regularly supplied to a control system in order for the vehicle to carry out the plan.
+After planning has been performed, a reference signal must be regularly supplied to the control system in order for the vehicle to carry out the plan.
 This is known as tracking.
 The primary difficulty here is that the trajectory plan has been developed in a one dimensional position space using a reference time which will have unknown drift relative to real time.
 As such, we must find a way to look up the coordinates of the vehicle within the reference trajectory using information typically available for autonomous cars.
@@ -623,8 +627,6 @@ To summarize, in the last three sections we have described how a urban path is b
 and computation of a velocity and jerk profile for segments within sub-paths that honor constraints
 for speed, velocity and acceleration as well as reactively slow down or stop for pedestrians on
 the urban path.
-
-\textbf{RG: Ambarish suggests to replace all speed except speed limit by velocity and speeds -> velocities}
 
 \section{Summary} \label{sec:summary}
 
