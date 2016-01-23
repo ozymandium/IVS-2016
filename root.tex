@@ -208,7 +208,7 @@ This work focuses on the Path Manager (Sec. \ref{sec:pathmanager}) and the Traje
 
 \section{Path Manager} \label{sec:pathmanager}
 
-The path manager is implemented as a discrete state machine, depicted in Fig. \ref{fig:st}.
+The Path Manager is implemented as a discrete state machine, depicted in Fig. \ref{fig:st}.
 Each of the states is described below.
 
 
@@ -223,8 +223,8 @@ Many systems perform trajectory planning over a sliding window within the full p
 We break the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:subpathdivision}, and call Trajectory Planner for each sub-path in the path.
 
 Prescribed initial and end conditions for position, speed, and acceleration must be honored.
-All planning is longitudinal; that is, speed is the primary focus, and we assume that the control subsystem will ensure that the vehicle follows the prescribed path.
-This means that the desired trajectory plan may be mapped into one dimension using curvilinear coordinates to significantly simplify the solution.
+All planning is longitudinal; that is, speed profile generation is the primary focus, and we assume that the control subsystem will ensure that the vehicle follows the prescribed path.
+This means that the desired trajectory plan may be mapped onto one dimension using curvilinear coordinates to significantly simplify the solution.
 We show how two dimensional constraints (specifically cornering speeds for this work) are expressed in one dimension to guide planning.
 
 In the absence of pedestrians, the path manager cycles between NORMAL and PSTOP states.
@@ -279,8 +279,8 @@ The preceding quantities are depicted graphically in Fig. \ref{fig:react}.
 
 \section{Trajectory Planning} \label{sec:trajectoryplanning}
 
-The task of Trajectory Planning is to take a one dimensional set of waypoints from the Path Manager, and compute a series of constant jerk intervals for motion along the length of the path.
-This trajectory must be time optimal yet still fall within constraints on speed, acceleration, and jerk.
+The task of Trajectory Planning is to take a 1D set of waypoints from the Path Manager, and compute a series of constant jerk intervals for motion along the length of the path.
+The resulting trajectory must be time optimal and satisfy all the constraints on speed, acceleration, and jerk.
 Elevation changes will not be addressed here.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
 
@@ -288,10 +288,11 @@ Integrating piecewise constant jerk over time yields acceleration which is piece
 
 \subsection{Path Segmentation} \label{sec:pathsegmentation}
 
-Our approach to fitting appropriate jerk profiles to complex sub-paths is to further break each sub-path into segments which have very simple shape.
+In this section we describe our approach to fitting appropriate jerk profiles to complex sub-paths. 
+We first break each sub-path into segments which have very simple shape.
 Once this is done, each segment can be compared to a library of possible jerk profiles to find a good match.
 Each segment will be defined by the vector $\mathbf{b}  = [v_i, a_i, L, v_m, v_f]$, being initial speed, initial acceleration, the total distance, speed limit, and the final speed, respectively.
-Additionally, the desired positive and negative acceleration $\mathbf{a}_m = [a^+_m , a^-_m]$ and the desired positive and negative jerk $\mathbf{j}_m = [j^+_m , j^-_m]$ for must be defined for each segment.
+Additionally, the desired positive and negative acceleration $\mathbf{a}_m = [a^+_m , a^-_m]$ and the desired positive and negative jerk $\mathbf{j}_m = [j^+_m , j^-_m]$ must be defined for each segment.
 A sub-path is then a set of $N_s$ segments, each of which is defined by a set of parameters $\mathbf{b}_{k_s}$, $\mathbf{a}_{m,k_s}$, and $\mathbf{j}_{m,k_s}$ where $k_S = 1 ... N_s$ and can be solved individually in sequence.
 
 
@@ -311,7 +312,7 @@ For instance, acceleration constraints may include a set of limits derived from 
 
 % How we actually did this.
 For the purposes of developing a simple example application, two constraints will be used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{B,y}^{max}$. 
-Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation $v_{m,k_p}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_{k_p}}$ for $k_p = 1, ..., N_p$, where $N_p$ is the number of waypoints in the sub-path.
+Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation \textbf{ RG: using centrifugal  force relationship ????} $v_{m,k_p}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_{k_p}}$ for $k_p = 1, ..., N_p$, where $N_p$ is the number of waypoints in the sub-path.
 The value $\kappa_{k_P}$ denotes the path curvature at each point.
 For each sub-path point, the value $v_{m,k_p}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$.
 
@@ -384,7 +385,7 @@ Primary goal of this process is the continuity of position, speed, and accelerat
   \end{algorithmic}
   \caption{
     Algorithm to set speed boundary conditions for interior segments.
-    Having consolidated the waypoints in to a set of path segments, the maximum allowable speed for each segment, $v_{m,i}$ is known.
+    Having consolidated the waypoints into a set of path segments, the maximum allowable speed for each segment, $v_{m,i}$ is known.
     This algorithm uses the set of $\mathbf{v_{m}}$ for all segments to choose the highest allowable start and end speeds for each path segment.
   }
 \label{alg:segmentspeedboundaryconditions}
@@ -425,14 +426,12 @@ In the simplest case, one value for each of the quantities expressed in these re
   \label{eq:jm}
 \end{equation}
 
-There are many cases in which this solution will fail.
-For instance, if $L$ is sufficiently short and $v_m$ is sufficiently high, then it will not be possible to ever reach $v_m$ with realistic values of $\mathbf{a}_m$ and $\mathbf{j}_m$.
-We propose to define 4 other basic profiles to cover all feasible values in $\mathbf{b}$., and our algorithm judiciously chooses the appropriate profile.
+We propose to define 4 other basic profiles to cover all feasible values in $\mathbf{b}$, and our algorithm judiciously chooses the appropriate profile. These 4 cases cover cases in which the 7-phase solution fails. For instance, if $L$ is too short or $v_m$ is too high, then it will not be possible to ever reach $v_m$ with realistic values of $\mathbf{a}_m$ and $\mathbf{j}_m$.
 The other profiles are explained below.
 
 All impossible scenarios are automatically ruled out (e.g., end speed above speed limit, traveling speed of zero, negative speeds in $\mathbf{b}$, etc).
 It should be noted that traveling backward (i.e., in reverse gear) is not supported in this work.
-To find closed-form solutions for $[\Delta t_1, ..., \Delta t_M]$, given $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$, a symbolic solver was used.
+To find closed-form solutions for $[\Delta t_1, ..., \Delta t_M]$, given $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$, a symbolic solver was used \textbf{RG: can specify solver name???} .
 
 For each of the profiles, it is possible that the chosen values of $\mathbf{a}_m$ and $\mathbf{j}_m$ will not be feasible for a desired speed at the end of the phase.
 This results in a negative time interval for one or more phases.
@@ -469,23 +468,23 @@ However, if $v_i > v_f$, then a regular 4-phase profile is attempted.
   \centering
   \begin{tabular}{cc}
   \subfigure[6-phase profile] {
-  \includegraphics[width=0.4\columnwidth]{graphics/6phase_v(s).png}
+  \includegraphics[width=0.43\columnwidth]{graphics/6phase_v(s).png}
   \label{fig:6phaseprofile}
   } &
   \subfigure[4-phase profile] {
-  \includegraphics[width=0.4\columnwidth]{graphics/4phase_v(s).png}
+  \includegraphics[width=0.43\columnwidth]{graphics/4phase_v(s).png}
   \label{fig:4phaseprofile}
   } \\
   \subfigure[Reversed 4-phase profile] {
-  \includegraphics[width=0.4\columnwidth]{graphics/4Rphase_all_derivatives.png}
+  \includegraphics[width=0.43\columnwidth]{graphics/4Rphase_all_derivatives.png}
   \label{fig:4rphaseprofile}
   } &
   \subfigure[3-phase profile] {
-  \includegraphics[width=0.4\columnwidth]{graphics/3phase_v(s).png}
+  \includegraphics[width=0.43\columnwidth]{graphics/3phase_v(s).png}
   \label{fig:3phaseprofile}
   }
   \end{tabular}
-  \caption{6, 4, Reversed 4 and 3-phase profiles, displayed as speed vs. position along path}
+  \caption{6, 4, Reversed 4 and 3-phase profiles, displayed as speed vs. position along path.}
 
 \end{figure}
 
@@ -535,7 +534,7 @@ It is now possible to integrate $j(t)$ to determine an instantaneous trajectory 
 \subsection{Reactive Stop Trajectories} \label{sec:reactivestoptrajectory}
 
 The procedure for planning NORMAL mode trajectories is separate from that used to compute RSTOP trajectories.
-A 3-phase profile will be used, with end conditions $v_f=0, a_f=0$ and initial conditions set to the current state of the navigation filter.
+A 3-phase profile is used, with end conditions $v_f=0, a_f=0$ and initial conditions set to the current state of the navigation filter.
 While it would seem that the segment solving procedure described in Sec. \ref{sec:3phase} could be applied to reactive stopping, this is not the case.
 As was mentioned previously, only one of $[L, v_f]$ may be rigidly enforced for a 3-phase profile, but not both, since no closed-form solution exists for that case.
 Normal planning enforces $L$ to avoid skewing segment boundaries within each subpath.
