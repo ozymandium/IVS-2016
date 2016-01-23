@@ -588,10 +588,6 @@ After this, it is assumed that the vehicle controller will need samples of a sma
   \label{fig:cartos}
 \end{figure}
 
-\textbf{RG: this paragraph along with above figure should be merged with 2D to 1D s transformation section. in the figure please show a line for s coordinate as well}
-
-\textbf{RC: Only the first two sentences pertain to 1D <-> 2D. it's a broad overview paragraph that needs to come before the following paragraphs.}
-
 The general idea is to project the vehicle's current position onto the path, and then find the cumulative distance along the path between the start point and the projection point.
 The 2D vehicle position is thus transformed into a 1D location corresponding to the vehicle's current reference time.
 Once this reference time is obtained, it may be used to look up position, speed, acceleration, and jerk along the curve of the path over the future time window.
