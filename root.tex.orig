@@ -102,8 +102,8 @@ We present an online method of revising the trajectory plan to safely avoid pede
 
 We first describe the architecture of our system in Sec. \ref{sec:systemarchirecture}.
 We also describe other subsystems that our system needs to work with, and planned stops.
-Section \ref{sec:pathmanager} describes the high level Path Manager that calls the trajectory planner as necessary to 
-exhibit reactive behavior and stop for pedestrians that may appear on the road.
+Section \ref{sec:pathmanager} describes the high level Path Manager that calls the Trajectory Planner as necessary to 
+exhibit reactive behavior and stop for pedestrians that appear on the road.
 In Section \ref{sec:trajectoryplanning}, we describe trajectory planning which takes a 2D path and generates a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
 We explain how we handle intersections, turns in the road and planned stops due to stop signs (that have already been marked in the map).
 We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
@@ -282,7 +282,11 @@ The preceding quantities are depicted graphically in Fig. \ref{fig:react}.
 
 \section{Trajectory Planning} \label{sec:trajectoryplanning}
 
+<<<<<<< HEAD
 The task of Trajectory Planning is to take a one dimensional set of waypoints from the Path Manager, and compute a series of constant jerk intervals for motion along the length of the path.
+=======
+The task of Trajectory Planning is to take a 2 dimensional (horizontal plane) set of waypoints from the Path Manager, and compute a series of constant jerk intervals for motion along the length of the sub-path.
+>>>>>>> 06dc8eac302a498e6c7168474bc0f721755579c3
 This trajectory must be time optimal yet still fall within constraints on speed, acceleration, and jerk.
 Elevation changes will not be addressed here.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
@@ -575,7 +579,7 @@ The solution to this problem is known as trajectory tracking, and will be discus
 \section{Trajectory Tracking} \label{sec:trajectorytracking}
 
 After planning has been performed, a reference signal must be regularly supplied to a control system in order for the vehicle to carry out the plan.
-This is known as tracking.
+This is known as tracking .
 The primary difficulty here is that the trajectory plan has been developed in a one dimensional position space using a reference time which will have unknown drift relative to real time.
 As such, we must find a way to look up the coordinates of the vehicle within the reference trajectory using information typically available for autonomous cars.
 A minimal set of such information would include position, velocity vector, heading, and acceleration in the body frame.
