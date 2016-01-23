@@ -128,8 +128,7 @@ It outputs global position, global heading, body frame velocity and body frame a
   \centering
   \includegraphics[width=1.0\columnwidth]{graphics/MissingReactionPiece2.png}
   \caption{
-   Primary system components. The {\it Path Manager} and {\it Trajectory Planner} components (in blue) are presented herein.
-   \textbf{RG: blue color is too dark to read text ????????????}
+    Primary system components. The {\it Path Manager} and {\it Trajectory Planner} components (in blue) are presented herein.
   }
   \label{fig:addreact}
 \end{figure}
@@ -201,7 +200,6 @@ Its primary functions are:
 The Software Controller governs engine speed, braking, and steering.
 It takes as an input a trajectory which is sampled at 10 Hz and spans 2 seconds, beginning at the moment of data transmission.
 This short-term trajectory is oriented in the vehicle body frame.
-\textbf{Citation for controller ????}.
 This work focuses on the Path Manager (Sec. \ref{sec:pathmanager}) and the Trajectory Planner (Sec. \ref{sec:trajectoryplanning} \& Sec. \ref{sec:trajectorytracking}).
 
 
@@ -222,13 +220,12 @@ Each of the states is described below.
 \end{figure}
 
 Many systems perform trajectory planning over a sliding window within the full path which progresses with the vehicle.
-This requires ... \textbf{something about computing actions through stop signs before it's necessary and how that's inefficient}.
 We break the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:subpathdivision}, and call Trajectory Planner for each sub-path in the path.
 
 Prescribed initial and end conditions for position, speed, and acceleration must be honored.
 All planning is longitudinal; that is, speed is the primary focus, and we assume that the control subsystem will ensure that the vehicle follows the prescribed path.
 This means that the desired trajectory plan may be mapped into one dimension using curvilinear coordinates to significantly simplify the solution.
-We show how two dimensional \textbf{concerns????} (specifically cornering speeds for this work) are expressed in one dimension to guide planning.
+We show how two dimensional constraints (specifically cornering speeds for this work) are expressed in one dimension to guide planning.
 
 In the absence of pedestrians, the path manager cycles between NORMAL and PSTOP states.
 In NORMAL state, the path manager send the first subpath to the trajectory planner, which then plans and executes it before coming to a stop at the end of the subpath.
@@ -309,7 +306,7 @@ are found for every point in the given sub-path.
 After this is done, the process described in next section may be applied to each of the segments so that a plan of jerk vs. time may be generated.
 
 The ceiling calculation is a minimax problem.
-Each of the 9 scalars \textbf{RG: please explain 9 scalars ???} is a minimum of several maxima computed from an arbitrary set of constraints.
+Each of the 9 scalars in $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is a minimum of several maxima computed from an arbitrary set of constraints.
 For instance, acceleration constraints may include a set of limits derived from friction coefficients at every point along the sub-path.
 
 % How we actually did this.
@@ -537,11 +534,8 @@ It is now possible to integrate $j(t)$ to determine an instantaneous trajectory 
 
 \subsection{Reactive Stop Trajectories} \label{sec:reactivestoptrajectory}
 
-\textbf{RG: abrupt transition. please add a few lines on current sub-path being modified into 2 sub-paths. And there being a presence of a pedestrian}
-
-This is the procedure for determining nominal stopping distance required.
+The procedure for planning NORMAL mode trajectories is separate from that used to compute RSTOP trajectories.
 A 3-phase profile will be used, with end conditions $v_f=0, a_f=0$ and initial conditions set to the current state of the navigation filter.
-
 While it would seem that the segment solving procedure described in Sec. \ref{sec:3phase} could be applied to reactive stopping, this is not the case.
 As was mentioned previously, only one of $[L, v_f]$ may be rigidly enforced for a 3-phase profile, but not both, since no closed-form solution exists for that case.
 Normal planning enforces $L$ to avoid skewing segment boundaries within each subpath.
@@ -551,7 +545,7 @@ Reformulating a new 3-phase jerk profile accordingly is a simple matter for a sy
 % The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as the hard constraint.
 
 Now appropriate values of $a_m^-$ and $j_m^-$ must be chosen to completely parameterize the trajectory.
-For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used.
+For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used and the distance traversed in the resultant trajectory is reported as the current value of $\Delta s_{RSTOP}$.
 
 Once the path manager triggers RSTOP, the trajectory is then recomputed with increasingly higher-magnitude values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} <= \Delta s_{avail}$.
 Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
@@ -587,15 +581,19 @@ After this, it is assumed that the vehicle controller will need samples of a sma
 
 \begin{figure}[thpb]
   \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/PathProjection.png}
-  \caption{Showing projection of current position of car shown by green triangle to s coordinate system
-   \textbf{ RG: please label link in figure if possible} }
+  \includegraphics[width=0.8\columnwidth]{graphics/PathProjectionSlice.png}
+  \caption{Showing projection of current position of car shown by green triangle to s coordinate system. Each circle represents a node, and the lines between them are links. The orange dots indicate future trajectory samples which are sent to the controller.
+  }
 
   \label{fig:cartos}
 \end{figure}
 
-\textbf{RG: this paragraph along with above figure should be merged with 2D to 1D s transformation section. in the figure please show a line for s coordinate as well} The general idea is to project the vehicle's current position onto the path, and then find the cumulative distance along the path between the start point and the projection point.
-This is the 1D location corresponding to the vehicle's current reference time.
+\textbf{RG: this paragraph along with above figure should be merged with 2D to 1D s transformation section. in the figure please show a line for s coordinate as well}
+
+\textbf{RC: Only the first two sentences pertain to 1D <-> 2D. it's a broad overview paragraph that needs to come before the following paragraphs.}
+
+The general idea is to project the vehicle's current position onto the path, and then find the cumulative distance along the path between the start point and the projection point.
+The 2D vehicle position is thus transformed into a 1D location corresponding to the vehicle's current reference time.
 Once this reference time is obtained, it may be used to look up position, speed, acceleration, and jerk along the curve of the path over the future time window.
 From there it is a matter of simple geometry to transform these values into the coordinate system of the path and, subsequently, any other coordinate system which may be needed.
 
@@ -615,10 +613,10 @@ Other, more accurate, approximations which work well include cubic splines, arc 
 
 Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to look up $v_{B,x}(t_{veh})$, $a_{B,x}(t_{veh})$, and $j_{B,x}(t_{veh})$.
 Additionally, it is also needed to sample $s(t)$ at intervals ahead of the vehicle.
-Since it is known that $s(t)$ is piecewise cubic, reference time as a function of vehicle position along the path, $t(s)$, F may be approximated \textbf {as cubic if a spline ??????? } is being constructed from knots which have a very high resolution.
-In this case, an $s(t)$ spline has already been created using the control points from the unified planning process described in Section~\ref{sec:jerkprofiles}, and it is now resampled at $\Delta t = 0.01 sec$.
+Since it is known that $s(t)$ is piecewise cubic, reference time as a function of vehicle position along the path, $t(s)$, may be approximated as cubic using a spline.
+To get the knots, $s(t)$ is sampled at $\Delta t = 0.01 sec$.
 This yields two vectors $s'$ and $t'$ which are then used to create a univariate cubic $t(s)$ spline.
-Evaluating the $t(s_{veh})$ then yields the current reference time.
+Evaluating $t(s_{veh})$ then yields the current reference time.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
