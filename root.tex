@@ -97,8 +97,8 @@ We present an online method of revising the trajectory plan to safely avoid pede
 
 We first describe the architecture of our system in Sec. \ref{sec:systemarchirecture}.
 We also describe other subsystems that our system needs to work with, and planned stops.
-Section \ref{sec:pathmanager} describes the high level Path Manager that calls the trajectory planner as necessary to 
-exhibit reactive behavior and stop for pedestrians that may appear on the road.
+Section \ref{sec:pathmanager} describes the high level Path Manager that calls the Trajectory Planner as necessary to 
+exhibit reactive behavior and stop for pedestrians that appear on the road.
 In Section \ref{sec:trajectoryplanning}, we describe trajectory planning which takes a 2D path and generates a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
 We explain how we handle intersections, turns in the road and planned stops due to stop signs (that have already been marked in the map).
 We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
@@ -148,8 +148,8 @@ We assume that the path planner operates independently from the trajectory plann
 We also assume that we have a high resolution digital map with lane centers, stop signs, crosswalk geometry, and turning curves at intersections.
 The destination is manually input into the system by the passengers.
 Using the path planner, we obtain a path along lane centers from the vehicle's current location (computed by the navigation filter) to the destination.
-This plan is output as a set of global waypoints, with the waypoints corresponding to stop signs flagged.
-This same map database is used to search for stop signs and provide their locations.
+This plan is then output as a set of global waypoints.
+
 
 %\begin{figure}[thpb]
 %  \centering
@@ -168,6 +168,8 @@ This same map database is used to search for stop signs and provide their locati
   \label{fig:intersect}
 \end{figure}
 
+Our High Resolution Map database is used to search for stop signs and provide their locations.
+The plan waypoints corresponding to stop signs are then flagged for later processing.
 We also have an In-Out Algorithm implemented via polygon intersection that can be used to ignore “safe” pedestrians
 Pedestrians that are on sidewalks, off-path crosswalks, and behind planned stops as shown in Figure \ref{fig:intersect} can be considered ``safe'' and are ignored.
 This is done by searching the same map database used for path planning.
@@ -270,7 +272,7 @@ The preceding quantities are depicted graphically in Fig. \ref{fig:react}.
 
 \section{Trajectory Planning} \label{sec:trajectoryplanning}
 
-The task of Trajectory Planning is to take a 2 dimensional (horizontal plane) set of waypoints from the Path Manager, and compute a series of constant jerk intervals for motion along the length of the path.
+The task of Trajectory Planning is to take a 2 dimensional (horizontal plane) set of waypoints from the Path Manager, and compute a series of constant jerk intervals for motion along the length of the sub-path.
 This trajectory must be time optimal yet still fall within constraints on speed, acceleration, and jerk.
 Elevation changes will not be addressed here.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
@@ -293,9 +295,8 @@ A path is then a set of $N_s$ segments, each of which is defined by a set of par
 
 The segmentation process proceeds as follows:
 \begin{enumerate} \label{asdf}
-  \item \emph{Ceiling calculation}, where 
-%$v_m$, $\mathbf{a}_m$, and $\mathbf{j}_m$ 
-initial/final speeds, speed limit, peak acceleration and jerk 
+  \item \emph{Ceiling calculation}, where $v_m$, $\mathbf{a}_m$, and $\mathbf{j}_m$ 
+%$initial/final speeds, speed limit, peak acceleration and jerk 
 are found for every point in the given subpath.
   \item \emph{Clustering}, in which subpath points are grouped sequentially and the segment boundaries are determined..
   \item \emph{Consolidation}, in which a single $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is selected for each segment.
@@ -343,9 +344,8 @@ Figure \ref{fig:1Dto2DandSegmentation} shows the result of this algorithm.
 \end{figure}
 
 % need better notation here.
-In the consolidation step, a single set of 
-%$\mathbf{g}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ 
-initial/final speeds, speed limit, peak acceleration and jerk 
+In the consolidation step, a single set of $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ 
+%initial/final speeds, speed limit, peak acceleration and jerk 
 must be calculated for each segment using the values corresponding to each of the waypoints which comprise the segment in question.
 The minimum of scalar across all constituent points is chosen.
 While not time optimal, it does ensure that no constraints are violated while still keeping the number of total segments low.
@@ -470,7 +470,7 @@ However, if $v_i > v_f$, then a regular 4-phase profile is attempted.
   \includegraphics[width=0.4\columnwidth]{graphics/4phase_v(s).png}
   \label{fig:4phaseprofile}
   } \\
-  \subfigure[4 Reversed phase profile] {
+  \subfigure[Reversed 4-phase profile] {
   \includegraphics[width=0.4\columnwidth]{graphics/4Rphase_all_derivatives.png}
   \label{fig:4rphaseprofile}
   } &
@@ -479,7 +479,7 @@ However, if $v_i > v_f$, then a regular 4-phase profile is attempted.
   \label{fig:3phaseprofile}
   }
   \end{tabular}
-  \caption{6, 4, 4Reversed and 3-phase profiles, displayed as speed vs. position along path}
+  \caption{6, 4, Reversed 4 and 3-phase profiles, displayed as speed vs. position along path}
 
 \end{figure}
 
@@ -606,7 +606,7 @@ Other, more accurate, approximations which work well include cubic splines, arc 
 
 Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to look up $v_{B,x}(t_{veh})$, $a_{B,x}(t_{veh})$, and $j_{B,x}(t_{veh})$.
 Additionally, it is also needed to sample $s(t)$ at intervals ahead of the vehicle.
-Since it is known that $s(t)$ is piecewise cubic, reference time as a function of vehicle position along the path, $t(s)$,F may be approximated as cubic if a spline is being constructed from knots which have a very high resolution.
+Since it is known that $s(t)$ is piecewise cubic, reference time as a function of vehicle position along the path, $t(s)$, F may be approximated \textbf {as cubic if a spline ??????? } is being constructed from knots which have a very high resolution.
 In this case, an $s(t)$ spline has already been created using the control points from the unified planning process described in Section~\ref{sec:jerkprofiles}, and it is now resampled at $\Delta t = 0.01 sec$.
 This yields two vectors $s'$ and $t'$ which are then used to create a univariate cubic $t(s)$ spline.
 Evaluating the $t(s_{veh})$ then yields the current reference time.
@@ -614,7 +614,10 @@ Evaluating the $t(s_{veh})$ then yields the current reference time.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\textbf{RG: abrupt transition. need to summarize here}
+To summarize, in the last three sections we have described how a urban path is broken into sub-paths,
+and computation of a velocity and jerk profile for segments within sub-paths that honor constraints
+for speed, velocity and acceleration as well as reactively slow down or stop for pedestrians on
+the urban path.
 
 \textbf{RG: Ambarish suggests to replace all speed except speed limit by velocity and speeds -> velocities}
 
@@ -626,7 +629,7 @@ in an autonomous car to follow an urban path with online updates to avoid pedest
 stopping. We built a robust stopping model as part of Trajectory Planner reliably integrated with 
 the Path Manager.
 We can travel along desired path, stop at stop signs, stop for pedestrians in roadway, and continue after 
-they leave. Our system handles complex cases that were not explicitly programmed gracefully, such as following 
+they leave. Our system handles complex cases that were not explicitly programmed, gracefully, such as following 
 pedestrians if they continue walking on the road away from the car. Our system works with multiple 
 pedestrians as we only need to consider the closest pedestrian ahead of us. 
 
