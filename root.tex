@@ -344,6 +344,39 @@ In the present example, this means that in the straight portions of the subpath 
 As a result, many of the curves will have a constant speed.
 For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are initially all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
 
+A jerk vs. time profile will be fit to each segment using the algorithm in Section \ref{sec:jerkprofiles}.
+Speed and acceleration must be continuous between each segment, but only the corresponding speed ceilings have been found, so the start and end conditions for each segment must be determined.
+The values of $a_i$ and $v_i$ for the first segment are set to be the value which is currently reported from sensor data.
+Since the final acceleration is to be set to zero for all profiles, each subsequent segment may begin with $a_i = 0$.
+For the final segment, setting $v_f = 0$ is prudent unless the scenario demands otherwise.
+Algorithm~\ref{alg:segmentspeedboundaryconditions} is used to set boundary speed conditions for the interior segments. 
+Continuity of position, speed, and acceleration is the primary goal of this process.
+
+\begin{figure}
+  \begin{algorithmic}[1]
+    \Procedure{SegmentBoundarySpeeds}{$v_m$}
+      \State $\mathbf{v}_p \gets \mathbf{v}_m$ \Comment{Initialize targets as ceilings}
+      \State $\mathbf{v}_{p,0} \gets v_i$ \Comment{Set starting speed to current}
+      \State $\mathbf{v}_p = [\mathbf{v}_p, 0]$ \Comment{Add final speed of 0}
+      \For{$i = 1, ..., N_s-1$}
+        \If{$v_{m,i+1} > v_{m,i}$}
+          \State $v_{p,i+1} \gets v_{m,i+1}$
+        \Else
+          \State $v_{p,i+1} \gets v_{m,i}$
+        \EndIf
+      \EndFor
+    \EndProcedure
+  \end{algorithmic}
+  \caption{
+    Algorithm to set speed boundary conditions for interior segments.
+    Having consolidated the waypoints in to a set of path segments, the maximum allowable speed for each segment, $v_{m,i}$ is known.
+    This algorithm uses the set of $\mathbf{v_{m}}$ for all segments to choose the highest allowable start and end speeds for each path segment.
+  }
+\label{alg:segmentspeedboundaryconditions}
+\end{figure}
+
+Now that all segments within the subpath have been parameterized, they may be solved sequentially.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Fitting Jerk Profiles to Each Segment} \label{sec:jerkprofiles}
@@ -395,6 +428,7 @@ If no acceptable values are found within the valid ranges of $\mathbf{a}^{max}_m
 To decide which profile to employ, a cascade approach is used.
 Analytic values of time intervals are evaluated for each profile by plugging in new values of $\mathbf{a}_m$ and $\mathbf{j}_m$ until all time intervals are positive and real.
 The order in which they are attempted is: 7 $\rightarrow$ 6 $\rightarrow$ 4 / 4R $\rightarrow$ 3.
+Each is described below.
 
 \subsubsection{7 Phase} \label{sec:7phase}
 
@@ -453,79 +487,32 @@ The initial speed is maintained for a period before applying the brakes.
 \subsubsection{3 Phase} \label{sec:3phase}
 
 A change from one speed to another.
-All of the above profiles are composed of some combination of a 3 phase profile and a $j_k = 0$ phase.
+All of the above profiles are composed of some combination of a 3 phase profile and a $j = 0$ phase.
 This presents a difficulty in that either $L$ or $v_f$ may be enforced, but not both (there is no solution to enforce both).
-As such, this profile is chosen only for a segment in which it is impossible to completely arrive at the end speed given the initial speed, so fitting one of the two 4 phase profiles has been attempted and subsequently failed.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\subsection{Unified Solution} \label{sec:unifiedsolution}
-
-At this point, the path has been divided into segments and conditions have been computed such that an analytically derived plan can be fit to each segment individually.
-Now a reference trajectory must be generated for the entire path.
-Continuity of position, speed, and acceleration is the primary goal of this process.
-
-A jerk vs. time profile is fit to each segment using the algorithm in Section \ref{sec:jerkprofiles}.
-Speed and acceleration must be continuous between each segment, but only the corresponding speed ceilings have been found, so the start and end conditions for each segment must be determined.
-The values of $a_i$ and $v_i$ for the first segment is set to be the value which is currently reported from sensor data.
-Since the final acceleration is set to zero for all profiles, each subsequent segment may begin with $a_i = 0$.
-For the final segment, setting $v_f = 0$ is prudent unless the scenario demands otherwise.
-Algorithm~\ref{alg:segmentspeedboundaryconditions} is used to set boundary speed conditions for the interior segments. 
-
-\begin{figure}
-  \begin{algorithmic}[1]
-    \Procedure{SegmentBoundarySpeeds}{$v_m$}
-      \State $\mathbf{v}_p \gets \mathbf{v}_m$ \Comment{Initialize targets as ceilings}
-      \State $\mathbf{v}_{p,0} \gets v_i$ \Comment{Set starting speed to current}
-      \State $\mathbf{v}_p = [\mathbf{v}_p, 0]$ \Comment{Add final speed of 0}
-      \For{$i = 1, ..., N_s-1$}
-        \If{$v_{m,i+1} > v_{m,i}$}
-          \State $v_{p,i+1} \gets v_{m,i+1}$
-        \Else
-          \State $v_{p,i+1} \gets v_{m,i}$
-        \EndIf
-      \EndFor
-    \EndProcedure
-  \end{algorithmic}
-  \caption{
-    Algorithm to set speed boundary conditions for interior path segments.
-    Having consolidated the waypoints in to a set of path segments, the maximum allowable speed for each segment, $v_{m,i}$ is known.
-    This algorithm uses the set of $\mathbf{v_{m}}$ for all segments to choose the highest allowable start and end speeds for each path segment.
-  }
-\label{alg:segmentspeedboundaryconditions}
-\end{figure}
-
-% talk about control points
-Now each segment is solved individually.
-In the case where a segment requires a speed change which is infeasible given limits on acceleration and jerk, then the final speed for that segment is planned to be the closes possible value.
+As such, this profile is chosen only for a segment in which it is impossible to completely arrive at the end speed given the initial conditions.
 When these discrepancies in the feasible $v_f$ for a segment arise, the corresponding value in $v_p$ is updated so that the new conditions may be accounted for in the subsequent segment.
 
-At the end of the process, there will be a set of $N_{cp}$ ``control points''.
-A control point is a vector $[t_{ref}, s, v_{B,x}, a_{B,x}, j_{B,x}]$ which describes the longitudinal kinematic state of the target vehicle at the moment of an infinite jounce jerk change.
-Fitting a jerk profile to each segment results in control points which must be stitched into the control points for the preceding segments.
-While no further information than initial conditions, time durations, and jerk values is needed (simple integration would yield lower derivatives of position), this information is already available since it must be solved for each segment.
-This extra information may be used as a redundancy layer to verify that no errors occurred.
-For each segment with $M$ jerk phases, the following is produced:
+% \subsection{Stitching Segment Solutions Together} \label{sec:unifiedsolution}
+
+At this point, the subpath has been divided into segments and an analytically derived plan has been fit to each segment individually.
+Now a unified reference trajectory must be constructed by stitching these together.
+
+For each segment with $M$ jerk phases, the following values are computed, which correspond to the instants at which jerk changes:
 \begin{itemize}
   \item $M$ time durations $\Delta t_{ref}$. These must be added to the last time value from the previous segment to translate them into reference time.
-  \item $M+1$ values of distance elapsed within the segment $\Delta s$. These must be shifted forward by the last $s$ value from the previous segment to translate them into the 1D path domain. Additionally, the first value must be erased.
-  \item $M+1$ values of $v_{B,x}$. The first value is checked against the last value from the previous segment to verify equality, then it is erased. These need no translation.
-  \item $M+1$ values of $a_{B,x}$. The first value is checked against the last value from the previous segment to verify equality, then it is erased. These need no translation.
-  \item $M$ jerk values, which may be appended directly to the preceding jerk values
+  \item $M$ jerk values $j(t_{ref})$, which may be appended directly to the preceding jerk values
 \end{itemize}
+It is now possible to integrate $j(t)$ to determine an instantaneous trajectory at any moment in time.
 
-\emph{RG: please explain reference time, $s$ and $\Delta s$ ????????}
+% After stitching together control point vectors for time, position, and its derivatives, all information required to have a trajectory plan is now in place.
+% To aid in this, univariate splines are created with time as the independent variable, using the control points as knots.
+% Position along the path as a function of reference plan time, $s(t)$, takes the form of a cubic Hermite spline, constructed using the speed control points $v_{B,x}(t)$ to set the derivatives.
+% Speed along the path $v_{B,x}(t)$ takes the form of a quadratic Hermite spline, with the acceleration control points $a_{B,x}(t)$ used to set the derivatives at every knot.
+% Acceleration $a_{B,x}(t)$ is piecewise linear, so lookup is a trivial matter.
+% The same applies to $j_{B,x}(t)$, which may be implemented with a simple table.
 
-After stitching together control point vectors for time, position, and its derivatives, all information required to have a trajectory plan is now in place.
-Since $j(t)$ is piecewise constant, it may be integrated to determine an instantaneous trajectory at any moment in time.
-To aid in this, univariate splines are created with time as the independent variable, using the control points as knots.
-Position along the path as a function of reference plan time, $s(t)$, takes the form of a cubic Hermite spline, constructed using the speed control points $v_{B,x}(t)$ to set the derivatives.
-Speed along the path $v_{B,x}(t)$ takes the form of a quadratic Hermite spline, with the acceleration control points $a_{B,x}(t)$ used to set the derivatives at every knot.
-Acceleration $a_{B,x}(t)$ is piecewise linear, so lookup is a trivial matter.
-The same applies to $j_{B,x}(t)$, which may be implemented with a simple table.
-
-However, the time at which the trajectory plan must be referenced is not always known.
-The solution to this problem is known as trajectory tracking control, and will be discussed in the next section.
+% However, the time at which the trajectory plan must be referenced is not always known.
+% The solution to this problem is known as trajectory tracking control, and will be discussed in Sec. \ref{sec:trajectorytracking}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -548,7 +535,7 @@ For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning 
 Once the path manager triggers RSTOP, the trajectory is then recomputed with increasingly higher-magnitude values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} <= \Delta s_{avail}$.
 Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
 
-After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
+% After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
 The path must now be truncated for 1D $\leftrightarrow$ 2D transformation.
 Within the trajectory tracker, all portions of the path leading up to the location of RSTOP triggering are removed, as well as the portions after the location which corresponds to $s_{veh} + \Delta s_{RSTOP}$
 This is depicted in Fig. \ref{fig:pathtostop}
@@ -603,7 +590,7 @@ Other, more accurate, approximations which work well include cubic splines, arc 
 Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to look up $v_{B,x}(t_{veh})$, $a_{B,x}(t_{veh})$, and $j_{B,x}(t_{veh})$.
 Additionally, it is also needed to sample $s(t)$ at intervals ahead of the vehicle.
 Since it is known that $s(t)$ is piecewise cubic, reference time as a function of vehicle position along the path, $t(s)$,F may be approximated as cubic if a spline is being constructed from knots which have a very high resolution.
-In this case, an $s(t)$ spline has already been created using the control points from the unified planning process described in Section~\ref{sec:unifiedsolution}, and it is now resampled at $\Delta t = 0.01 sec$.
+In this case, an $s(t)$ spline has already been created using the control points from the unified planning process described in Section~\ref{sec:jerkprofiles}, and it is now resampled at $\Delta t = 0.01 sec$.
 This yields two vectors $s'$ and $t'$ which are then used to create a univariate cubic $t(s)$ spline.
 Evaluating the $t(s_{veh})$ then yields the current reference time.
 
