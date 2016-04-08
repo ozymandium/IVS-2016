@@ -93,6 +93,15 @@ It should react to pedestrians at the intersections as well as jay walking pedes
 Further, the pedestrians can be static or moving.
 Pedestrians on the sidewalks should be ignored by the car.
 
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=0.7\columnwidth]{graphics/its_car.png}
+  \caption{
+    Showing car used in our experiments.
+  }
+  \label{fig:addreact}
+\end{figure}
+
 We present a novel method for planning longitudinal trajectories 
 %(the time derivatives of position in the body-forward direction) 
 along the desired path without requiring prior knowledge of travel time.
@@ -225,7 +234,7 @@ Each of the states is described below.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/StateMachineSimple.png}
+  \includegraphics[width=0.6\columnwidth]{graphics/stgraph.PNG}
   \caption{State Transition Diagram for Path Manager. System transitions from NORMAL to PSTOP mode at each stop sign. In the presence of a pedestrian the system transitions to RSTOP.}
   \label{fig:st}
 \end{figure}
