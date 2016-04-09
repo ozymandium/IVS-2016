@@ -1,0 +1,92 @@
+Reviewer 1 of IV'16 submission 318
+
+Comments to the author
+======================
+
+Overall: 
+The abstract is very promising. Unfortunately the content
+of the abstract is not completely covered in the paper
+itself: the results of 100h testing is missing in the
+paper.
+
+Section II: I understand that the reference path is input
+to the system. Where is this input linked to?
+
+--> talk about path input to path manager in beginning of section 3, reference 
+figure 1
+
+Section III: 
+- At several points you refer to section V (e.g.
+explanation of s). However, since the reader did not read
+this section yet, it makes it hard to follow. Maybe you
+could consider to introduce 's' earlier than in section V?
+
+--> talk about time parameterization of path earlier, table lookup
+Remove the 2D/1D distinction, and just talk about lookup
+--> merge traj planning and traj tracking
+--> introduce path manager after trajectory planner
+
+- Is the pedestrian behavior included in your approach or
+is it assumed to be standing still? Could you explain a bit
+further on this?
+--> assume limited knowledge of pedestrian dynamics, tout that as a strength of algorithm, robust. introductory paragraph to Sec111-C
+Section VI Summary:
+I would expect a title "Conclusions" here.
+Also here, it's only mentioned that there has been 100h of
+testing, but no furhter results are given. It would be
+worthwhile to consider a section: testing results
+
+
+
+Reviewer 2 of IV'16 submission 318
+
+Comments to the author
+======================
+
+-   The introduction clearly states what the problem
+is, however, the word “we” is used often.
+-   “Sec” and “Section” are both used throughout the
+paper, please choose one.
+-   The path manager section is vague at best. A
+description of the system is given in words, however no
+reasoning behind the choices is given. Besides that
+numerical values such as distances/times etc. are omitted.
+--> give values for buffers (Rakesh)
+-   Why is there a static buffer and not a
+forward/relative velocity dependent one?
+--> mention that ds_rstop is dynamic
+-   “Once this is done, each segment can be compared to
+a library of possible jerk profiles to find a good match”.
+What is this jerk library? Is this not defined by the
+dynamics of the vehicle in question?
+--> "The order in which they are attempted is: 7 → 6 → 4 / 4R → 3."" Refer to this as jerk library
+-   “Additionally, the desired positive and negative
+acceleration am = [a+ m; a&#1048576; m] and the desired
+positive and negative jerk jm = [j+m ; j&#1048576;m ] must
+be defined for each segment.” Why do they need to be
+defined for each segment? Please elaborate.
+---> mention that different values for each segment are possible (traction in different surfaces, school zone sedate driving) However for this work, the values are the same for each segment.
+-   “For instance, acceleration constraints may include
+a set of limits derived from friction coefficients at every
+point along the sub-path.” Why do you consider friction
+limits if human comfort is of importance? Typically,
+accelerations remain small. 
+---> mention again that variety of ceilings can be used concurrently
+-   The approximation of the forward velocity does not
+consider negative lateral accelerations properly, this will
+now become a complex number, i.e. also formulate a lower
+bound or include the absolute value. 
+--> mention abs
+-   I have missed the introduction of “algorithm 8”. 
+-   It would be greatly appreciated if the different
+phased algorithms are explained using math instead of
+words. 
+--> add jerk profiles
+
+
+
+
+
+
+-------------->>> question marks
+------> single threaded, could work on embedded systems

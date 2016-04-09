@@ -7,3 +7,7 @@ build
 *.bbl
 *.blg
 .fuse_*
+*.glue
+*.gz
+*.fls
+*.fdb_latexmk
