@@ -116,11 +116,11 @@ Section \ref{sec:systemarchirecture} describes the architecture of our system an
 other subsystems that interact with our system.
 Section \ref{sec:pathmanager} describes the high-level Path Manager that calls the trajectory planner as necessary to 
 exhibit reactive behavior and stop for pedestrians that may appear on the road.
-Section \ref{sec:trajectoryplanning} describe trajectory planning, where we start with a 2D path, and generate a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
+Section \ref{sec:trajectoryplanning} describes trajectory planning, where we generate a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
 %We explain how we pass through intersections, turns in the road and planned stops at the stop signs.
-We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
+%We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
 Once the trajectory plan is formulated, we send the reference signal to the controllers that govern steering, braking, and engine speed.
-This is the trajectory tracking problem, which is discussed in Section \ref{sec:trajectorytracking},
+This is the trajectory tracking and is discussed in Section \ref{sec:trajectorytracking},
 followed by conclusions and future extensions.
 % tracking
 
