@@ -84,7 +84,6 @@ In this paper, we describe a trajectory generation system that satisfies the con
 %There has also been some work in simulating vehicles and modeling uncertainty, but pedestrians are less predictable than cars 
 %and can appear suddenly on the road (when someone is jaywalking for example).
 
-We present an autonomy framework for pedestrian-aware ground vehicles.
 We would like our autonomous car to travel autonomously from start to destination while honoring traffic laws and avoiding pedestrians on the roadway.
 %Desired behavior from the car includes following traffic laws at the intersections such as stop signs.
 At stop signs, our autonomous car should stop and wait for an appropriate amount of time.
@@ -102,26 +101,27 @@ Pedestrians on the sidewalks should be ignored by the car.
   \label{fig:addreact}
 \end{figure}
 
-We present a novel method for planning longitudinal trajectories 
+We present an autonomy framework for pedestrian-aware ground vehicles
+with a novel method for planning longitudinal trajectories 
 %(the time derivatives of position in the body-forward direction) 
-along the desired path without requiring prior knowledge of travel time.
+along the desired path. %without requiring prior knowledge of travel time.
 Our method segments the path using a set of kinematic or dynamic constraints.
 Each segment is then planned sequentially by choosing a piecewise constant jerk profile.
 We intelligently choose a jerk profile from a set of pre-solved profiles such that acceleration is continuous and within limits throughout the entire path.
-The resultant trajectory plan is then sampled to provide a reference for real-time vehicle control, which is called trajectory tracking. In urban environments, modifying the vehicle's intended path is often not possible. 
+The resultant trajectory plan is then sampled to provide a reference for real-time vehicle control. %, which is called trajectory tracking. In urban environments, modifying the vehicle's intended path is often not possible. 
 % We are not doing control or tracking control. We're doing tracking.
-We revise the trajectory plan online to safely avoid pedestrians by slowing down or stopping. % when no alternative paths are available.
+%We revise the trajectory plan online to safely avoid pedestrians by slowing down or stopping. % when no alternative paths are available.
 
-We first describe the architecture of our system in Sec. \ref{sec:systemarchirecture}.
-We also describe other subsystems that our system needs to work with, and planned stops.
+Section \ref{sec:systemarchirecture} describes the architecture of our system and 
+other subsystems that interact with our system.
 Section \ref{sec:pathmanager} describes the high-level Path Manager that calls the trajectory planner as necessary to 
 exhibit reactive behavior and stop for pedestrians that may appear on the road.
-In Section \ref{sec:trajectoryplanning}, we describe trajectory planning. Starting from a 2D path, we generate a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
-We explain how we pass through intersections, turns in the road and planned stops at the stop signs.
+Section \ref{sec:trajectoryplanning} describe trajectory planning, where we start with a 2D path, and generate a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
+%We explain how we pass through intersections, turns in the road and planned stops at the stop signs.
 We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
-Once the trajectory plan is formulated, it is utilized online. We send the reference signal to the controllers that govern steering, braking, and engine speed.
-This is the trajectory tracking problem, which is discussed in Section \ref{sec:trajectorytracking}.
-We then conclude and discuss future extensions.
+Once the trajectory plan is formulated, we send the reference signal to the controllers that govern steering, braking, and engine speed.
+This is the trajectory tracking problem, which is discussed in Section \ref{sec:trajectorytracking},
+followed by conclusions and future extensions.
 % tracking
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
