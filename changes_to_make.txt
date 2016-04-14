@@ -14,6 +14,7 @@ to the system. Where is this input linked to?
 
 --> talk about path input to path manager in beginning of section 3, reference 
 figure 1
+    DONE
 
 Section III: 
 - At several points you refer to section V (e.g.
@@ -29,7 +30,10 @@ Remove the 2D/1D distinction, and just talk about lookup
 - Is the pedestrian behavior included in your approach or
 is it assumed to be standing still? Could you explain a bit
 further on this?
+
 --> assume limited knowledge of pedestrian dynamics, tout that as a strength of algorithm, robust. introductory paragraph to Sec111-C
+    DONE
+    
 Section VI Summary:
 I would expect a title "Conclusions" here.
 Also here, it's only mentioned that there has been 100h of
@@ -59,29 +63,41 @@ forward/relative velocity dependent one?
 a library of possible jerk profiles to find a good match”.
 What is this jerk library? Is this not defined by the
 dynamics of the vehicle in question?
+
 --> "The order in which they are attempted is: 7 → 6 → 4 / 4R → 3."" Refer to this as jerk library
+    DONE
+
 -   “Additionally, the desired positive and negative
 acceleration am = [a+ m; a&#1048576; m] and the desired
 positive and negative jerk jm = [j+m ; j&#1048576;m ] must
 be defined for each segment.” Why do they need to be
 defined for each segment? Please elaborate.
+
 ---> mention that different values for each segment are possible (traction in different surfaces, school zone sedate driving) However for this work, the values are the same for each segment.
+
 -   “For instance, acceleration constraints may include
 a set of limits derived from friction coefficients at every
 point along the sub-path.” Why do you consider friction
 limits if human comfort is of importance? Typically,
 accelerations remain small. 
+
 ---> mention again that variety of ceilings can be used concurrently
+
 -   The approximation of the forward velocity does not
 consider negative lateral accelerations properly, this will
 now become a complex number, i.e. also formulate a lower
 bound or include the absolute value. 
+
 --> mention abs
+
 -   I have missed the introduction of “algorithm 8”. 
+
 -   It would be greatly appreciated if the different
 phased algorithms are explained using math instead of
 words. 
+
 --> add jerk profiles
+    DONE
 
 
 

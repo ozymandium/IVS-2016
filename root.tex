@@ -98,7 +98,7 @@ Pedestrians on the sidewalks should be ignored by the car.
   \caption{
     Showing car used in our experiments.
   }
-  \label{fig:addreact}
+  \label{fig:car}
 \end{figure}
 
 We present an autonomy framework for pedestrian-aware ground vehicles
@@ -170,6 +170,9 @@ It outputs global position, global heading, body frame velocity and body frame a
 Pedestrian Detection is performed via a camera and LiDAR system based on \cite{Gepperth2013,Gepperth2014}.
 The pedestrian detector outputs a bounding box for each pedestrian as shown in Figure \ref{fig:ped}.
 The pedestrian position is computed in the vehicle body frame, and subsequently transformed to the global frame to be related to the planned path.
+Pedestrian detection algorithms are still in heavy development.
+In order to make the algorithm robust to detection errors, it is designed under the assumption that pedestrian trajectory estimates and predictions are unavailable.
+Furthermore, it is assumed that no unique identifier is available to differentiate one pedestrian from the other in a single epoch, or to correlate the same pedestrian between epochs.
 
 \begin{figure}[tb]
   \centering
@@ -220,8 +223,9 @@ Remaining pedestrians pose collision risk and our vehicle needs to reactively sl
 \section{Path Manager} \label{sec:pathmanager}
 
 
-Path Manager performs trajectory planning over a sliding window within the full path with the sliding window moving with the vehicle.
-It breaks the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:subpathdivision}, and calls the Trajectory Planner for each sub-path in the path.
+The Path Manager performs trajectory planning over a sliding window within the full path with the sliding window moving with the vehicle.
+As shown in Fig. \ref{fig:addreact}, a Path Planner passes paths into it as a 2D linestring.
+It then breaks the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:subpathdivision}, and calls the Trajectory Planner for each sub-path in the path.
 
 Prescribed initial and end conditions for the position, speed, and acceleration must be honored.
 All planning is longitudinal; that is, speed profile generation is the primary focus. We assume that the control subsystem ensures that the vehicle follows the prescribed path.
@@ -454,6 +458,7 @@ These 4 profiles are:
 This profile, with $\Delta t_i$ as shown in Figure \ref{fig:full7phasespec}, is always attempted first.
 All time steps have a single solution, enabled by the fact that the initial and end conditions are known, and the two peak accelerations and two jerk magnitudes are provided as configuration parameters.
 In the case where $\Delta t_2$ or $\Delta t_6$ are negative, accel-jerk tuning must be employed.
+The 7-phase profile can be expressed as $( j_1 > 0 , j_2 = 0 , j_3 < 0 , j_4 = 0 , j_5 < 0 , j_6 = 0 , j_7 > 0 )$.
 In the instance where $\Delta t_4$ is negative, the total segment length $L$ is too short to reach top speed of $v_m$, so a 6-phase profile must be used.
 
 \subsubsection{6-phase} \label{sec:6phase}
@@ -464,6 +469,7 @@ The peak speed, in this case, has a solution that cannot be manipulated directly
 Without this known value, the problem becomes under-defined, so $\Delta t_2$ and $\Delta t_5$ each have two solutions: one negative and one positive.
 The positive solution is chosen.
 In the case where both solutions are negative, accel-jerk tuning is attempted. 
+The 6-phase profile can be expressed as $( j_1 > 0 , j_2 = 0 , j_3 < 0 , j_4 < 0 , j_5 = 0 , j_6 > 0 )$
 Should that yield no positive time intervals, one of the two 4-phase profiles then becomes appropriate, since $L$ is not large enough to accommodate accelerating past the end speed.
 If $v_i > v_f$, then a reversed 4-phase profile is attempted.
 However, if $v_i > v_f$, then a regular 4-phase profile is attempted.
@@ -495,13 +501,14 @@ However, if $v_i > v_f$, then a regular 4-phase profile is attempted.
 \subsubsection{4-phase} \label{sec:4phase}
 
 When $v_i < v_m \simeq v_f$, the vehicle should increase speed, then maintain that speed for the distance remaining in the segment.
+The 4-phase profile can be expressed as $( j_1 > 0, j_2 = 0 , j_3 < 0, j_4 = 0 )$
 
 
 \subsubsection{Reversed 4-phase} \label{sec:reversed4phase}
 
 When $v_i \simeq v_m > v_f$, it would be nonsensical to immediately brake.
 The initial speed is maintained for a period before applying the brakes.
-
+The reversed 4-phase profile can be expressed as $( j_1 = 0, j_2 < 0, j_3 = 0 , j_4 > 0 )$
 
 \subsubsection{3-phase} \label{sec:3phase}
 
@@ -510,6 +517,7 @@ All of the above profiles are composed of some combination of a 3 phase profile 
 This presents a difficulty in that either $L$ or $v_f$ may be enforced, but not both (there is no solution to enforce both).
 As such, this profile is chosen only for a segment in which it is impossible to completely arrive at the end speed given the initial conditions.
 When these discrepancies in the feasible $v_f$ for a segment arise, the corresponding value in $v_p$ is updated so that the new conditions may be accounted for in the subsequent segment.
+The 3-phase profile can be expressed as $(j_1 \pm 0 , j_2 = 0, j_3 \mp 0 )$
 
 % \subsection{Stitching Segment Solutions Together} \label{sec:unifiedsolution}
 For each of the profiles, it is possible that the chosen values of $\mathbf{a}_m$ and $\mathbf{j}_m$ will not be feasible for a desired speed at the end of the phase.
@@ -522,8 +530,8 @@ If no acceptable values are found within the valid ranges of $\mathbf{a}^{max}_m
 To decide which profile to employ, a cascade approach is used.
 Analytic values of time intervals are evaluated for each profile by plugging in new values of $\mathbf{a}_m$ and $\mathbf{j}_m$ until all time intervals are positive and real.
 The order in which they are attempted is: 7 $\rightarrow$ 6 $\rightarrow$ 4 / 4R $\rightarrow$ 3.
-Each is described below.
-
+Each has been described above.
+The routines for fitting a profile to a given $\mathbf{b}, \mathbf{a}_m, \mathbf{j}_m$ to a segment using this cascade approach is referred to as a ``jerk library''.
 
 At this point, the subpath has been divided into segments and an analytically derived plan has been fit to each segment individually.
 Now a unified reference trajectory must be constructed by stitching these together.
@@ -645,12 +653,14 @@ autonomous car controller.
 
 In this paper, we have presented a novel real-time method for planning longitudinal trajectories 
 in an autonomous car to follow an urban path with online updates to avoid pedestrians on the roadway by slowing down or 
-stopping. We built a robust stopping model as part of Trajectory Planner reliably integrated with 
-the Path Manager.
+stopping.
+We built a robust stopping model as part of Trajectory Planner reliably integrated with the Path Manager.
 We can travel along a desired path, stop at stop signs, stop for pedestrians in the roadway, and continue after 
 they leave. Our system gracefully handles complex cases that were not explicitly programmed, such as following 
 pedestrians if they continue walking on the road away from the car. Our system works with multiple 
 pedestrians as we only need to consider the closest pedestrian ahead of us. 
+
+\textbf{emphasize limited knowledge of pedestrians as a strength}
 
 We make three contributions in this paper. First, we present an integrated trajectory planner that
 simultaneously limits jerk, velocity and acceleration to pre-set desired values while being responsive 
