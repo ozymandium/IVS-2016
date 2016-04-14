@@ -73,7 +73,7 @@ These include legal speed limits, engine dynamics, desired side-slip limits, tra
 
 For human passengers, it is widely believed that high levels of jerk (time derivative of acceleration) and high acceleration and velocity values are prime contributors to ride discomfort.
 Lot of work has been performed on optimizing these constraints for highways and country roads ~\cite{ziegler14,bahram15,xu12,CHEB15CI}.
-Similar work performed by Bianco et al \cite{GuarinoLoBianco2004,GuarinoLoBianco2005,Bianco2007,Bianco2009,GuarinoLoBianco2013} sets the travel time a priori and optimally minimizes ???what????? without hard limitations or direct jerk control.
+Similar work performed by Bianco et al \cite{GuarinoLoBianco2004,GuarinoLoBianco2005,Bianco2007,Bianco2009,GuarinoLoBianco2013} sets the travel time a priori and optimally minimizes jerk without hard limitations or direct jerk control.
 Other work on optimizing these constraints on urban roads ~\cite{Rastelli14,Li15} doesn't consider reactive behaviors such as responding to pedestrians and other dynamic objects in the scene.
 
 Many systems in the literature plan paths around pedestrians, stop for them, or produce a warning ~\cite{pradalier05,benenson06,gu14,mogelmose15,johnson13}. However, these systems do not work as part of an integrated system that navigates urban roads.
@@ -410,7 +410,6 @@ with continuity of position, speed, and acceleration.
     Algorithm to set speed boundary conditions for interior segments.
     Having consolidated the waypoints into a set of path segments, the maximum allowable speed for each segment, $v_{m,i}$ is known.
     This algorithm uses the set of $\mathbf{v_{m}}$ for all segments to choose the highest allowable start and end speeds for each path segment.
-    ????????? define $v_p$ ???????????
   }
 \label{alg:segmentspeedboundaryconditions}
 \end{figure}
