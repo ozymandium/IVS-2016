@@ -279,7 +279,9 @@ It should be noted that there is a brief waiting period before resuming NORMAL m
 \end{figure}
 
 When a pedestrian is detected, the nominal distance needed to stop, $\Delta s_{RSTOP}$, must be computed given the vehicle's current location, speed, and forward acceleration.
-??????????? The procedure for doing this is the same as the procedure for planning the RSTOP trajectory with fewer steps, since the planning algorithm is quite efficient. ?????????? not clear
+This serves as a dynamic buffer between the pedestrian and the vehicle.
+In order to calculate $\Delta s_{RSTOP}$, a hypothetical trajectory plan is created (but not implemented).
+A 3-phase profile using the vehicle's current state as initial conditions and $v_f = 0$ is created, and the resultant distance then becomes the nominal required stopping distance.
 
 Note that a static buffer distance, $\Delta s_{buf}$ is added to ensure safety and comfort.
 RSTOP is triggered when $\Delta s_{avail} <= \Delta s_{RSTOP} + \Delta s_{buf}$ and the actual available stopping distance $\Delta s_{avail} = s_{ped} - s_{veh}$ is computed.
@@ -289,7 +291,7 @@ This procedure is repeated when the nearest pedestrian location changes by a val
 $\Delta s_{replan}$ value is typically set to 1 meter.
 Normal operation is resumed when the distance between the vehicle and the closest detected pedestrian satisfies $s_{ped} - s_{veh} > \Delta s_{resume} + \Delta s_{RSTOP}$. The static resume buffer should be set such that $\Delta s_{resume} > \Delta s_{buf} + \Delta s_{replan}$.
 These quantities are depicted graphically in Fig. \ref{fig:react}.
-
+Nominal parameter values are: $\Delta s_{buf} = 8.5 m$, $\Delta s_{replan} = 1.0 m$, $\Delta s_{resume} = 12.5 m$.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -309,6 +311,8 @@ We first break each sub-path into segments with a simple shape.
 Then each segment can be compared to a library of possible jerk profiles to find a good match.
 Each segment is defined by the vector $\mathbf{b}  = [v_i, a_i, L, v_m, v_f]$, being initial speed, initial acceleration, the total distance, speed limit, and the final speed, respectively.
 Additionally, the desired positive and negative acceleration $\mathbf{a}_m = [a^+_m , a^-_m]$ and the desired positive and negative jerk $\mathbf{j}_m = [j^+_m , j^-_m]$ must be defined for each segment.
+For this work, they are set constant for all segments.
+However, this functionality enables behaviors such as more sedate driving in a school zone or when traversing small areas with lower friction coefficients, such as patches of ice or gravel detected via camera.
 A sub-path is then a set of $N$ segments, each of which is defined by a set of parameters $\mathbf{b}_{k}$, $\mathbf{a}_{m,k}$, and $\mathbf{j}_{m,k}$ where $k = 1, ..., N$ and can be solved individually in sequence.
 
 
@@ -325,12 +329,13 @@ After these steps are completed, the process for fitting jerk profiles described
 The {\it Ceiling Calculation} is a minimax problem.
 Each of the 9 scalars in $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is a minimum of several maxima computed from an arbitrary set of constraints.
 For instance, acceleration constraints may include a set of limits derived from friction coefficients at every point along the sub-path.
+Any number of constraint sets may be used to compute the ceiling.
 
 % How we actually did this.
 For the purposes of developing a simple example application, two constraints will be used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{B,y}^{max}$. 
 Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation 
 %\textbf{ RG: using centrifugal  force relationship ????} 
-$v_{m,w}(a_{B,y}) = \sqrt{a_{B,y}^{max}/\kappa_{w}}$ for $w = 1, ..., W$, where $W$ is the number of waypoints in the sub-path.
+$v_{m,w}(a_{B,y}) = \sqrt{ | a_{B,y}^{max} / \kappa_{w} | }$ for $w = 1, ..., W$, where $W$ is the number of waypoints in the sub-path.
 The value $\kappa_{k_P}$ denotes the path curvature at each point.
 For each sub-path point, the value $v_{m,w}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$.
 

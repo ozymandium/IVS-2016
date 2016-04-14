@@ -24,7 +24,9 @@ could consider to introduce 's' earlier than in section V?
 
 --> talk about time parameterization of path earlier, table lookup
 Remove the 2D/1D distinction, and just talk about lookup
+
 --> merge traj planning and traj tracking
+
 --> introduce path manager after trajectory planner
 
 - Is the pedestrian behavior included in your approach or
@@ -49,21 +51,28 @@ Comments to the author
 
 -   The introduction clearly states what the problem
 is, however, the word “we” is used often.
+--> Remove "we"
+
 -   “Sec” and “Section” are both used throughout the
 paper, please choose one.
+
 -   The path manager section is vague at best. A
 description of the system is given in words, however no
 reasoning behind the choices is given. Besides that
 numerical values such as distances/times etc. are omitted.
 --> give values for buffers (Rakesh)
+    DONE
+
 -   Why is there a static buffer and not a
 forward/relative velocity dependent one?
 --> mention that ds_rstop is dynamic
+    -- That guy didn't read the paper. We clearly stateted that ds_rstop is a dynamic buffer.
+    DONE
+
 -   “Once this is done, each segment can be compared to
 a library of possible jerk profiles to find a good match”.
 What is this jerk library? Is this not defined by the
 dynamics of the vehicle in question?
-
 --> "The order in which they are attempted is: 7 → 6 → 4 / 4R → 3."" Refer to this as jerk library
     DONE
 
@@ -74,6 +83,7 @@ be defined for each segment.” Why do they need to be
 defined for each segment? Please elaborate.
 
 ---> mention that different values for each segment are possible (traction in different surfaces, school zone sedate driving) However for this work, the values are the same for each segment.
+    DONE
 
 -   “For instance, acceleration constraints may include
 a set of limits derived from friction coefficients at every
@@ -82,20 +92,20 @@ limits if human comfort is of importance? Typically,
 accelerations remain small. 
 
 ---> mention again that variety of ceilings can be used concurrently
+    DONE
 
 -   The approximation of the forward velocity does not
 consider negative lateral accelerations properly, this will
 now become a complex number, i.e. also formulate a lower
 bound or include the absolute value. 
-
 --> mention abs
+    DONE
 
 -   I have missed the introduction of “algorithm 8”. 
 
 -   It would be greatly appreciated if the different
 phased algorithms are explained using math instead of
 words. 
-
 --> add jerk profiles
     DONE
 
@@ -105,4 +115,7 @@ words.
 
 
 -------------->>> question marks
+
+
+
 ------> single threaded, could work on embedded systems
