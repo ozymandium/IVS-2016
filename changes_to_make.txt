@@ -23,11 +23,7 @@ this section yet, it makes it hard to follow. Maybe you
 could consider to introduce 's' earlier than in section V?
 
 --> talk about time parameterization of path earlier, table lookup
-Remove the 2D/1D distinction, and just talk about lookup
-
---> merge traj planning and traj tracking
-
---> introduce path manager after trajectory planner
+Remove the 2D/1D distinction, and just talk about lookup, and Frenet coordinate system
 
 - Is the pedestrian behavior included in your approach or
 is it assumed to be standing still? Could you explain a bit
@@ -115,6 +111,7 @@ words.
 
 
 -------------->>> question marks
+DONE
 
 
 
