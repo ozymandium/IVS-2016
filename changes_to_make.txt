@@ -108,11 +108,11 @@ words.
 
 
 
-
-
 -------------->>> question marks
 DONE
 
+--> take out Fig 4: crosswalks
 
+--> redo section 4 for readability
 
 ------> single threaded, could work on embedded systems
