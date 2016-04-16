@@ -24,6 +24,7 @@ could consider to introduce 's' earlier than in section V?
 
 --> talk about time parameterization of path earlier, table lookup
 Remove the 2D/1D distinction, and just talk about lookup, and Frenet coordinate system
+    DONE
 
 - Is the pedestrian behavior included in your approach or
 is it assumed to be standing still? Could you explain a bit
@@ -47,6 +48,7 @@ Comments to the author
 
 -   The introduction clearly states what the problem
 is, however, the word “we” is used often.
+
 --> Remove "we"
 
 -   “Sec” and “Section” are both used throughout the
@@ -108,7 +110,7 @@ words.
 
 
 
--------------->>> question marks
+---> question marks
 DONE
 
 --> take out Fig 4: crosswalks

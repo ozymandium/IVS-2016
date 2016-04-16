@@ -197,15 +197,15 @@ This plan is then output as a set of global waypoints.
 %  \label{fig:ped2}
 %\end{figure}
 
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=0.3\columnwidth]{graphics/IntersectionCrosswalks.png}
-  \caption{
-    A car, with the blue line path, turning right at the intersection only needs to consider pedestrians in the zebra crossings shown in yellow.
-    Pedestrians at the green crossings can be ignored unless they appear somewhere on the road.
-  }
-  \label{fig:intersect}
-\end{figure}
+% \begin{figure}[tb]
+%   \centering
+%   \includegraphics[width=0.3\columnwidth]{graphics/IntersectionCrosswalks.png}
+%   \caption{
+%     A car, with the blue line path, turning right at the intersection only needs to consider pedestrians in the zebra crossings shown in yellow.
+%     Pedestrians at the green crossings can be ignored unless they appear somewhere on the road.
+%   }
+%   \label{fig:intersect}
+% \end{figure}
 
 We also assume a High-Resolution Digital Map with lane centers, stop signs, crosswalk geometry, and turning curves at intersections.
 Our map provides the location of stop signs.
@@ -229,9 +229,10 @@ It then breaks the path into sub-paths at each stop location which is known a pr
 
 Prescribed initial and end conditions for the position, speed, and acceleration must be honored.
 All planning is longitudinal; that is, speed profile generation is the primary focus. We assume that the control subsystem ensures that the vehicle follows the prescribed path.
-This means that the desired trajectory plan may be mapped onto one dimension using curvilinear coordinates to significantly simplify the solution.
-%We show how two dimensional constraints (specifically cornering speeds for this work) are expressed in one dimension to guide planning.
-We express the 2D positions of the car (specifically cornering locations and speeds) in 1D $s$ coordinate system as described in Sec. \ref{sec:trajectorytracking} to guide planning.
+This allows all planning to be done in a Frenet (rather than Cartesian) frame for simplicity.
+The Frenet axis which runs along the length of the planned path is denoted by $s$, and all planning is performed in the $s$-axis.
+Differences along this axis ($\Delta s$) correspond to distances the car will actually travel.
+Mapping back to Cartesian coordinates (necessary for trajectory tracking) is well-discussed in the literature.
 
 Our Path Manager is implemented as a discrete state machine, depicted in Fig. \ref{fig:st}.
 Each of the states is described below.
@@ -259,7 +260,7 @@ When pedestrians are present, the transition from PSTOP to NORMAL is delayed unt
 \end{figure}
 
 All detected pedestrian locations are compared against the high-resolution digital map. Pedestrians that are off roadway are not considered.
-Each pedestrian location is projected onto the 1D path in the same manner as described in Sec. \ref{sec:trajectorytracking}.
+Each pedestrian location is perpendicularly projected onto the path to determine how much travel distance separates them from the car.
 Pedestrians that are on a different subpath than the vehicle, or behind the vehicle are disregarded (i.e., $s_{ped} < s_{veh}$).
 All the remaining pedestrians pose potential collision risks. However, only the closest pedestrian is considered for RSTOP.
 
@@ -297,8 +298,8 @@ Nominal parameter values are: $\Delta s_{buf} = 8.5 m$, $\Delta s_{replan} = 1.0
 
 \section{Trajectory Planning} \label{sec:trajectoryplanning}
 
-The task of Trajectory Planning is to take a 1D set of waypoints from the Path Manager, and compute a series of constant jerk intervals for motion along the length of the path.
-The resulting trajectory must be time optimal and satisfy all the constraints on speed, acceleration, and jerk.
+The task of Trajectory Planning is to take a set of scalar waypoints in the $s$-frame from the Path Manager, and compute a series of constant jerk intervals for longitudinal motion along the $s$-axis
+The resulting trajectory should minimize time as much as possible, and satisfy all the constraints on speed, acceleration, and jerk.
 %Elevation changes will not be addressed here.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, a speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
 
@@ -307,10 +308,10 @@ Integrating piecewise constant jerk over time yields acceleration which is piece
 \subsection{Path Segmentation} \label{sec:pathsegmentation}
 
 In this section, we describe our approach to fitting appropriate jerk profiles to complex sub-paths. 
-We first break each sub-path into segments with a simple shape.
+We first break each sub-path into segments where the constraint values can be considered constant.
 Then each segment can be compared to a library of possible jerk profiles to find a good match.
 Each segment is defined by the vector $\mathbf{b}  = [v_i, a_i, L, v_m, v_f]$, being initial speed, initial acceleration, the total distance, speed limit, and the final speed, respectively.
-Additionally, the desired positive and negative acceleration $\mathbf{a}_m = [a^+_m , a^-_m]$ and the desired positive and negative jerk $\mathbf{j}_m = [j^+_m , j^-_m]$ must be defined for each segment.
+Additionally, the desired positive and negative acceleration $\mathbf{a}_m = [a^+_m , a^-_m]$ and the desired positive and negative jerk $\mathbf{j}_m = [j^+_m , j^-_m]$ are defined for each segment.
 For this work, they are set constant for all segments.
 However, this functionality enables behaviors such as more sedate driving in a school zone or when traversing small areas with lower friction coefficients, such as patches of ice or gravel detected via camera.
 A sub-path is then a set of $N$ segments, each of which is defined by a set of parameters $\mathbf{b}_{k}$, $\mathbf{a}_{m,k}$, and $\mathbf{j}_{m,k}$ where $k = 1, ..., N$ and can be solved individually in sequence.
@@ -324,7 +325,7 @@ are found for every point in the given sub-path.
   \item \emph{Clustering}, in which sub-path points are grouped sequentially and the segment boundaries are determined.
   \item \emph{Consolidation}, in which a single $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is selected for each segment.
 \end{enumerate}
-After these steps are completed, the process for fitting jerk profiles described in next sub-section is applied to each of the segments to generate a plan of jerk vs. time.
+% After these steps are completed, the process for fitting jerk profiles described in next sub-section is applied to each of the segments to generate a plan of jerk vs. time.
 
 The {\it Ceiling Calculation} is a minimax problem.
 Each of the 9 scalars in $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is a minimum of several maxima computed from an arbitrary set of constraints.
@@ -333,20 +334,23 @@ Any number of constraint sets may be used to compute the ceiling.
 
 % How we actually did this.
 For the purposes of developing a simple example application, two constraints will be used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{B,y}^{max}$. 
-Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation 
-%\textbf{ RG: using centrifugal  force relationship ????} 
-$v_{m,w}(a_{B,y}) = \sqrt{ | a_{B,y}^{max} / \kappa_{w} | }$ for $w = 1, ..., W$, where $W$ is the number of waypoints in the sub-path.
-The value $\kappa_{k_P}$ denotes the path curvature at each point.
-For each sub-path point, the value $v_{m,w}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration, denoted by $a^{max}_{B,y}$.
+Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation :
+\begin{equation}
+  v_{m,w}(a_{B,y}) = \sqrt{ | a_{B,y}^{max} / \kappa_{w} | } ~,~ w = 1, ..., W
+\end{equation}
+where $W$ is the number of waypoints in the sub-path, and $\kappa_{k_P}$ denotes the path curvature at each point.
+For each sub-path point, the value $v_{m,w}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration $a^{max}_{B,y}$.
 
 This information is used to choose the segment boundaries in the {\it Clustering} step.
 Any clustering algorithm may be used here, and a prudent choice of segment boundaries is arguably one of the most critical pieces of trajectory planning process.
-We choose a simple univariate heuristic which identifies curves in the roadway using only the speed ceiling.
+We choose a simple univariate heuristic which effectively identifies curves in the roadway using only the speed ceiling.
 Each time $v_{m,w} < SL$ becomes true, a curve is beginning, and a segment boundary is drawn.
 Each time $v_{m,w} = SL$ is once again true, the current curve has ended, and another segment boundary is drawn.
 
 Figure \ref{fig:1Dto2DandSegmentation} shows the result of this Clustering algorithm. 
-We start with a sub-path which is similar in structure to the sub-path between the stop signs in Fig. \ref{fig:subpathdivision}. This sub-path is broken up into five segments as shown in Fig. \ref{fig:1Dto2DandSegmentationa}, three shown in blue corresponding to straight line part of the sub-path and two shown in red corresponding to turns in the sub-path. As shown in Fig \ref{fig:1Dto2DandSegmentationb} we use the speed limit of 11.1 m/sec for the straight line segments and 3.0 m/sec for the turn segments to determine the segment boundaries. 
+We start with a sub-path which is similar in structure to the green sub-path in Fig. \ref{fig:subpathdivision}.
+This sub-path is broken up into five segments as shown in Fig. \ref{fig:1Dto2DandSegmentationa}.
+The three segments shown in blue correspond to more straight portions, and the two shown in red correspond to more curved portions.
  
 \begin{figure}[thpb]
   \centering
@@ -364,7 +368,7 @@ We start with a sub-path which is similar in structure to the sub-path between t
     The x-axis corresponds to distance along the subpath above.
     The legal speed limit of 11.1 m/s (25 mi/hr) is shown in cyan.
     The longitudinal speed required to adhere to lateral acceleration limits is shown in red.
-    The resultant speed ceiling is shown in blue.
+    The resultant speed ceiling ($v_m$) is shown in blue.
   ]{
   \label{fig:1Dto2DandSegmentationb}
   \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
@@ -373,23 +377,28 @@ We start with a sub-path which is similar in structure to the sub-path between t
   \label{fig:1Dto2DandSegmentation}
 \end{figure}
 
-% need better notation here.
 In the consolidation step, a single set of $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ 
-%initial/final speeds, speed limit, peak acceleration and jerk 
 must be calculated for each segment using the values corresponding to the waypoints comprising the segment.
-The minimum of scalar across all constituent points is chosen.
-While not time optimal, it ensures that no constraints are violated while still keeping the number of total segments low.
-In the present example, this means that in the straight portions of the subpath $v_m = SL$ and in the curves $v_m$ is set to the value required to obtain $a_{B,y}^{max}$ for the entirety of the curve.
-As a result, many of the curves will have a constant speed.
+The principle task is to find a value of $v_m$ for each segment using the values from segmentation, $SL$ and $v_{m,w}(a_{B,y}^{max})$. 
+The value of the speed ceiling for segment $k$ is chosen to be:
+\begin{equation}
+  v_{m,k} = min \left ( \mathbf{SL}_k ,  \mathbf{v}_{m}(a_{B,y}^{max}) |_k \right )
+\end{equation}
+where $\mathbf{SL}_k$ is the vector containing the values of the legal speed limit at every waypoint in segment $k$.
+The vector $\mathbf{v}_{m}(a_{B,y}^{max}) |_k$ contains the values of the speed limit from lateral acceleration at every waypoint in segment $k$.
+% The minimum of scalar across all constituent points is chosen.
+While not time optimal, choosing the minimum of these values over the entire segment ensures that no constraints are violated, and as a result, many of the curves will have a constant speed.
 For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are initially all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
+Once the values $v_{m,k}$ are set for every segment in the subpath, boundary conditions must be set to ensure that speed is continuous between segments. Acceleration continuity will be addressed later.
+The algorithm in Fig. \ref{alg:segmentspeedboundaryconditions} is used to compute the vector $\mathbf{v}_p$ and then each segment $k$ can be solved using:
+\begin{equation}
+  v_{i,k} = v_{f,k-1} = v_{p,k}
+\end{equation}
 
-A jerk vs. time profile is fit to each segment using the algorithm described in the next sub-section.
-Speed and acceleration must be continuous between each segment. Only the corresponding speed ceilings have been found, so the start and end conditions for each segment must be determined.
 The values of $a_i$ and $v_i$ for the first segment are set to the value currently reported from sensor data.
 Since the final acceleration is to be set to zero for all profiles, each subsequent segment may begin with $a_i = 0$.
 For the final segment, setting $v_f = 0$ is prudent unless the scenario demands otherwise.
-Algorithm~\ref{alg:segmentspeedboundaryconditions} is used to set boundary speed conditions for the interior segments,
-with continuity of position, speed, and acceleration.
+
 
 \begin{figure}
   \begin{algorithmic}[1]
@@ -415,6 +424,7 @@ with continuity of position, speed, and acceleration.
 \end{figure}
 
 Now that all segments within the subpath have been parameterized, they may be solved sequentially.
+A jerk vs. time profile is fit to each segment using the algorithm described in the next sub-section.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -580,7 +590,7 @@ Once the path manager triggers RSTOP, the trajectory is then recomputed with inc
 Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
 
 % After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
-The path must now be truncated for 1D $\leftrightarrow$ 2D transformation.
+The path must now be truncated for mapping back to Cartesian coordinates.
 Within the trajectory tracker, all portions of the path leading up to the location of RSTOP triggering are removed, as well as the portions after the location which corresponds to $s_{veh} + \Delta s_{RSTOP}$.
 % This is depicted in Fig. \ref{fig:pathtostop}
 The vehicle now begins sampling from this trajectory and executes a smooth reactive stop.
@@ -603,7 +613,7 @@ The solution to this problem is known as trajectory tracking, and will be discus
 
 After planning has been performed, a reference signal must be regularly supplied to the control system in order for the vehicle to carry out the plan.
 %This is known as tracking.
-The primary difficulty here is that the trajectory plan has been developed in a 1D position space using a reference time which has an unknown drift relative to real time.
+The primary difficulty here is that the trajectory plan has been developed in the $s$-frame using a reference time which has an unknown drift relative to real time.
 As such, we must find a way to look up the coordinates of the vehicle within the reference trajectory using information typically available for autonomous cars.
 A minimal set of such information includes position, velocity vector, heading, and acceleration in the body frame.
 It is assumed that the vehicle controller will need samples of a small window into the future trajectory to pilot the vehicle.
@@ -618,7 +628,7 @@ It is assumed that the vehicle controller will need samples of a small window in
 \end{figure}
 
 The general idea is to project the vehicle's current position onto the path, and then find the cumulative distance along the path between the start point and the projection point.
-The 2D vehicle position is thus transformed into a 1D location corresponding to the vehicle's current reference time.
+The Cartesian vehicle position is thus mapped onto the path at a Frenet position which corresponds to the vehicle's current reference time.
 Once this reference time is obtained, it may be used to look up position, speed, acceleration, and jerk along the curve of the path over the future time window.
 From there it is a matter of simple geometry to transform these values into the coordinate system of the path and, subsequently, any other coordinate system which may be needed.
 
@@ -630,7 +640,7 @@ Projections which lie outside of the link's two constituent path points are snap
 The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection $\mathbf{r}_p$.
 Any number of modifications can be made using heading, velocity vectors, and previous information to allow this method to be extended to complex overlapping paths or self-intersections.
 
-Choice of an algorithm to obtain the current 1D position of the vehicle along the length of the path $s_{veh}$ (i.e., in the same 1D $s$-coordinate system in which the planning was performed) is influenced by the form of the path plan.
+Choice of an algorithm to obtain the current position of the vehicle along the length of the path $s_{veh}$ is influenced by the form of the path plan.
 We assume that the path is linear between waypoints to significantly reduce the computational effort.
 So $s_{veh}$ at any epoch is the sum of the link lengths behind its perpendicular projection $\mathbf{r}_p$.
 However, the error in this approximation approaches zero as the spacing between path points approaches zero.
