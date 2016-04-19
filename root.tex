@@ -7,6 +7,7 @@
 \usepackage[pdftex]{graphicx}
 \usepackage{algpseudocode}
 \usepackage{subfigure}
+\usepackage{amssymb}
 \usepackage[noadjust]{cite}
 
 \title{\LARGE \bf
@@ -41,10 +42,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
-In this paper, we address the problem of trajectory planning for an autonomous car for urban roads while reacting to the presence of pedestrians.
+In this paper, we address the problem of trajectory planning for an autonomous car for urban roads while simultaneously reacting to the presence of pedestrians.
 Past work limits jerk, velocities and acceleration for smooth trajectories, without considering reactive behaviors such as responding to pedestrians.
 Other systems based on collision avoidance, plan paths around obstacles and pedestrians in unstructured environments.
-In this paper, we present an integrated trajectory generation and tracking system for urban environments. Our system simultaneously considers constraints for smooth trajectory and updates the trajectory in real-time to react to pedestrians on the road. 
+In this paper, we present an integrated trajectory generation and tracking system. % for urban environments. 
+Our system simultaneously considers constraints for smooth trajectory and updates the trajectory in real-time to react to pedestrians on the road. 
 
 We present a novel online method for planning %longitudinal
 trajectories to follow a given urban path while honoring traffic regulations such as stop signs at intersections. 
@@ -61,25 +63,25 @@ We have confirmed this with a test vehicle and pedestrians with over 100 hours o
 %When planning trajectories for 
 An autonomous ground vehicle operating on roadways, typically plans for trajectories with the goal of minimizing navigation time.
 % "path-trajectory" is improper. "path-velocity" is used extensively in the literature.
-It is common, to employ the path-velocity decomposition to separate the twin tasks of Path and Trajectory Planning, so that they can be run sequentially or in parallel.
+It is common to employ the path-velocity decomposition to separate the twin tasks of Path and Trajectory Planning, so that these tasks can be run sequentially or in parallel.
 % (i.e., path planning is performed prior to planning the speed that the vehicle will take along the chosen path).
-Here {\it Path Planning} involves computation of the optimal path and {\it Trajectory Planning} involves the computation of a velocity profile appropriate for the scenario.
+{\it Path Planning} involves computation of the optimal path and {\it Trajectory Planning} involves the computation of a velocity profile appropriate for the scenario.
 
-The set of possible paths to the destination is typically restricted
-by constraints such as traversability and legally available travel lanes.
 Trajectory computation for traveling on the path is often guided by passenger comfort. 
-The intended speed, acceleration, and time derivatives of position are also subject to constraints.
-These include legal speed limits, engine dynamics, desired side-slip limits, traction availability, and rollover risk.
-
 For human passengers, it is widely believed that high levels of jerk (time derivative of acceleration) and high acceleration and velocity values are prime contributors to ride discomfort.
+The intended speed, acceleration, and time derivatives of position are also subject to constraints
+due to legal speed limits, engine dynamics, desired side-slip limits, traction availability, and rollover risk.
 Lot of work has been performed on optimizing these constraints for highways and country roads ~\cite{ziegler14,bahram15,xu12,CHEB15CI}.
 Similar work performed by Bianco et al \cite{GuarinoLoBianco2004,GuarinoLoBianco2005,Bianco2007,Bianco2009,GuarinoLoBianco2013} sets the travel time a priori and optimally minimizes jerk without hard limitations or direct jerk control.
 Other work on optimizing these constraints on urban roads ~\cite{Rastelli14,Li15} doesn't consider reactive behaviors such as responding to pedestrians and other dynamic objects in the scene.
 
-Many systems in the literature plan paths around pedestrians, stop for them, or produce a warning ~\cite{pradalier05,benenson06,gu14,mogelmose15,johnson13}. However, these systems do not work as part of an integrated system that navigates urban roads.
-These systems also make the assumption that alternative paths around obstacles are available. Such an assumption may not always be valid in an urban scenario.
+The set of possible paths to the destination is typically restricted
+by constraints such as available travel lanes, and obstacles such as pedestrians.
+Many systems in the literature plan paths around pedestrians, stop for them, or produce a warning ~\cite{pradalier05,benenson06,gu14,mogelmose15,johnson13}. 
+%However, these systems do not work as part of an integrated system that navigates urban roads.
+These systems make an assumption that alternative paths around obstacles are available. Such an assumption may not always be valid in an urban scenario.
 Planners that optimize human comfort by modifying the path to go around obstacles \cite{Villagra2012,Villagra2012a} do not feature stopping as a well-integrated behavior.
-In this paper, we describe a trajectory generation system that satisfies the constraints for human comfort while being reactive to the presence of pedestrians on the road. We enforce hard upper limits on jerk without requiring that travel time is known for planning.
+In this paper, we describe a trajectory generation system that satisfies the constraints for human comfort while being reactive to the presence of pedestrians on the road. We enforce hard upper limits on jerk without requiring that travel time be known for planning.
 %Some work has been done for reacting to pedestrians such as by Singapore groups but it has been done at very low speeds (5 miles/hour).
 %There has also been some work in simulating vehicles and modeling uncertainty, but pedestrians are less predictable than cars 
 %and can appear suddenly on the road (when someone is jaywalking for example).
@@ -87,14 +89,14 @@ In this paper, we describe a trajectory generation system that satisfies the con
 We would like our autonomous car to travel autonomously from start to destination while honoring traffic laws and avoiding pedestrians on the roadway.
 %Desired behavior from the car includes following traffic laws at the intersections such as stop signs.
 At stop signs, our autonomous car should stop and wait for an appropriate amount of time.
-The car should also stop, slow down for pedestrians when appropriate.
-It should react to pedestrians at the intersections as well as jay walking pedestrians.
+The car should also stop, slow down for pedestrians %when appropriate.It should react to pedestrians 
+at the intersections as well as jay walking pedestrians.
 Further, the pedestrians can be static or moving.
 Pedestrians on the sidewalks should be ignored by the car.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.7\columnwidth]{graphics/its_car.png}
+  \includegraphics[width=0.6\columnwidth]{graphics/its_car.png}
   \caption{
     Showing car used in our experiments.
   }
@@ -112,11 +114,10 @@ The resultant trajectory plan is then sampled to provide a reference for real-ti
 % We are not doing control or tracking control. We're doing tracking.
 %We revise the trajectory plan online to safely avoid pedestrians by slowing down or stopping. % when no alternative paths are available.
 
-Section \ref{sec:systemarchirecture} describes the architecture of our system and 
-other subsystems that interact with our system.
-Section \ref{sec:pathmanager} describes the high-level Path Manager that calls the trajectory planner as necessary to 
-exhibit reactive behavior and stop for pedestrians that may appear on the road.
-Section \ref{sec:trajectoryplanning} describes trajectory planning, where we generate a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
+Section \ref{sec:systemarchirecture} describes the architecture of our system and interacting subsystems.
+Section \ref{sec:pathmanager} describes the high-level Path Manager that calls the trajectory planner to 
+exhibit reactive behavior and stop for pedestrians on the road.
+Section \ref{sec:trajectoryplanning} describes trajectory planning to generate a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
 %We explain how we pass through intersections, turns in the road and planned stops at the stop signs.
 %We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
 Once the trajectory plan is formulated, we send the reference signal to the controllers that govern steering, braking, and engine speed.
@@ -162,7 +163,7 @@ It outputs global position, global heading, body frame velocity and body frame a
   \centering
   \includegraphics[width=1.0\columnwidth]{graphics/MissingReactionPiece2.png}
   \caption{
-    Primary system components. The {\it Path Manager} and {\it Trajectory Planner} components (in blue) are presented herein.
+    Primary system components. The {\it Path Manager} and {\it Trajectory Planner} components (in green) are presented herein.
   }
   \label{fig:addreact}
 \end{figure}
@@ -170,9 +171,9 @@ It outputs global position, global heading, body frame velocity and body frame a
 Pedestrian Detection is performed via a camera and LiDAR system based on \cite{Gepperth2013,Gepperth2014}.
 The pedestrian detector outputs a bounding box for each pedestrian as shown in Figure \ref{fig:ped}.
 The pedestrian position is computed in the vehicle body frame, and subsequently transformed to the global frame to be related to the planned path.
-Pedestrian detection algorithms are still in heavy development.
-In order to make the algorithm robust to detection errors, it is designed under the assumption that pedestrian trajectory estimates and predictions are unavailable.
-Furthermore, it is assumed that no unique identifier is available to differentiate one pedestrian from the other in a single epoch, or to correlate the same pedestrian between epochs.
+%Pedestrian detection algorithms are still in heavy development.
+%In order to make the algorithm robust to detection errors, it is designed under the assumption that pedestrian trajectory estimates and predictions are unavailable. Furthermore, 
+It is assumed that no unique identifier is available to differentiate one pedestrian from the other in a single epoch, or to correlate the same pedestrian between epochs.
 
 \begin{figure}[tb]
   \centering
@@ -208,12 +209,13 @@ This plan is then output as a set of global waypoints.
 % \end{figure}
 
 We also assume a High-Resolution Digital Map with lane centers, stop signs, crosswalk geometry, and turning curves at intersections.
-Our map provides the location of stop signs.
-The plan waypoints corresponding to stop signs are then flagged for later processing.
+This map provides the location of stop signs.
+%The plan waypoints corresponding to stop signs are then flagged for later processing.
 We also have an In-Out Algorithm implemented via polygon intersection that can be used to ignore “safe” pedestrians
-Pedestrians that are on sidewalks, behind planned stops, and off-path crosswalks as shown in Figure \ref{fig:intersect} can be considered {\it safe} and are ignored.
+Pedestrians that are on sidewalks, behind planned stops, and off-path crosswalks.
+% as shown in Figure \ref{fig:intersect} can be considered {\it safe} and are ignored.
 %This is done by searching the same map database used for path planning.
-Remaining pedestrians pose collision risk and our vehicle needs to reactively slow down or stop for them.
+%Remaining pedestrians pose collision risk and our vehicle needs to reactively slow down or stop for them.
 %This is accomplished by sending stop message with pedestrian locations to the path manager.
 
 
@@ -224,8 +226,8 @@ Remaining pedestrians pose collision risk and our vehicle needs to reactively sl
 
 
 The Path Manager performs trajectory planning over a sliding window within the full path with the sliding window moving with the vehicle.
-As shown in Fig. \ref{fig:addreact}, a Path Planner passes paths into it as a 2D linestring.
-It then breaks the path into sub-paths at each stop location which is known a priori, as shown in Fig. \ref{fig:subpathdivision}, and calls the Trajectory Planner for each sub-path in the path.
+%As shown in Fig. \ref{fig:addreact}, a Path Planner passes paths into it as a 2D linestring.
+It breaks the path planner provided path into sub-paths at each stop location which are known a priori, as shown in Fig. \ref{fig:subpathdivision}. It then calls the Trajectory Planner for each sub-path.
 
 Prescribed initial and end conditions for the position, speed, and acceleration must be honored.
 All planning is longitudinal; that is, speed profile generation is the primary focus. We assume that the control subsystem ensures that the vehicle follows the prescribed path.
@@ -239,7 +241,7 @@ Each of the states is described below.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.6\columnwidth]{graphics/stgraph.PNG}
+  \includegraphics[width=0.9\columnwidth]{graphics/state_transition.PNG}
   \caption{State Transition Diagram for Path Manager. System transitions from NORMAL to PSTOP mode at each stop sign. In the presence of a pedestrian the system transitions to RSTOP.}
   \label{fig:st}
 \end{figure}
@@ -247,7 +249,7 @@ Each of the states is described below.
 In the absence of pedestrians, the path manager cycles between NORMAL and PSTOP states.
 In NORMAL state, the path manager sends the first subpath to the trajectory planner, which then plans and executes it before coming to a stop at the end of the subpath.
 In PSTOP mode, the path manager waits for a pre-set time duration before returning to NORMAL mode, where the next subpath is executed.
-When pedestrians are present, the transition from PSTOP to NORMAL is delayed until there are no pedestrians detected in the range denoted by $\Delta s_{resume}$ as shown in Fig. \ref{fig:react}(c).
+When pedestrians are present, the transition from PSTOP to NORMAL is delayed until no pedestrians are detected in the range denoted by $\Delta s_{resume}$ as shown in Fig. \ref{fig:react}(c).
 
 \begin{figure}[tb]
   \centering
@@ -260,21 +262,21 @@ When pedestrians are present, the transition from PSTOP to NORMAL is delayed unt
 \end{figure}
 
 All detected pedestrian locations are compared against the high-resolution digital map. Pedestrians that are off roadway are not considered.
-Each pedestrian location is perpendicularly projected onto the path to determine how much travel distance separates them from the car.
+Each pedestrian location is perpendicularly projected onto the path to determine the travel distance separating them from the car.
 Pedestrians that are on a different subpath than the vehicle, or behind the vehicle are disregarded (i.e., $s_{ped} < s_{veh}$).
 All the remaining pedestrians pose potential collision risks. However, only the closest pedestrian is considered for RSTOP.
 
 The distinction between momentarily braking for a pedestrian that quickly leaves the roadway and coming to a full stop needs no separate logic.
 They follow the same state transition, and since all trajectory plans are extremely smooth, riders are rarely aware that any change took place.
-It should be noted that there is a brief waiting period before resuming NORMAL mode from RSTOP to ensure that no tracking errors occur in the pedestrian detection algorithm.
+It should be noted that there is a brief waiting period before resuming NORMAL mode from RSTOP to ensure no tracking errors in the pedestrian detection algorithm.
 
 \begin{figure}[tb]
 \centering
-  \subfigure[In NORMAL mode, RSTOP is now triggered.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}}
+  \subfigure[In NORMAL mode, RSTOP is now triggered.]{\includegraphics[width=0.8\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}}
   \\
-  \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_Replan.png}}
+  \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=0.9\columnwidth]{graphics/RSTOP_Replan.png}}
   \\
-  \subfigure[PSTOP diagram showing bounds for reverting to NORMAL mode.]{\includegraphics[width=1.0\columnwidth]{graphics/RSTOP_Resume.png}}
+  \subfigure[PSTOP diagram showing bounds for reverting to NORMAL mode.]{\includegraphics[width=0.7\columnwidth]{graphics/RSTOP_Resume.png}}
   \caption{Graphical representation of static and dynamic thresholds used to trigger state transitions.}
   \label{fig:react}
 \end{figure}
@@ -285,7 +287,7 @@ In order to calculate $\Delta s_{RSTOP}$, a hypothetical trajectory plan is crea
 A 3-phase profile using the vehicle's current state as initial conditions and $v_f = 0$ is created, and the resultant distance then becomes the nominal required stopping distance.
 
 Note that a static buffer distance, $\Delta s_{buf}$ is added to ensure safety and comfort.
-RSTOP is triggered when $\Delta s_{avail} <= \Delta s_{RSTOP} + \Delta s_{buf}$ and the actual available stopping distance $\Delta s_{avail} = s_{ped} - s_{veh}$ is computed.
+RSTOP is triggered when $\Delta s_{avail} \leqslant \Delta s_{RSTOP} + \Delta s_{buf}$ and the actual available stopping distance $\Delta s_{avail} = s_{ped} - s_{veh}$ is computed.
 Planning and executing the trajectory for coming to a halt is detailed in Sec. \ref{sec:reactivestoptrajectory}.
 
 This procedure is repeated when the nearest pedestrian location changes by a value more than some static buffer $\Delta s_{replan} < \Delta s_{buf}$ compared to the location for which the current RSTOP planned.
@@ -298,8 +300,8 @@ Nominal parameter values are: $\Delta s_{buf} = 8.5 m$, $\Delta s_{replan} = 1.0
 
 \section{Trajectory Planning} \label{sec:trajectoryplanning}
 
-The task of Trajectory Planning is to take a set of scalar waypoints in the $s$-frame from the Path Manager, and compute a series of constant jerk intervals for longitudinal motion along the $s$-axis
-The resulting trajectory should minimize time as much as possible, and satisfy all the constraints on speed, acceleration, and jerk.
+The task of Trajectory Planning is to take a set of scalar waypoints in the frenet frame from the Path Manager, and compute a series of constant jerk intervals for longitudinal motion.% along the $s$-axis
+The resulting trajectory should minimize time, and satisfy all the constraints on speed, acceleration, and jerk.
 %Elevation changes will not be addressed here.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, a speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
 
@@ -310,7 +312,7 @@ Integrating piecewise constant jerk over time yields acceleration which is piece
 In this section, we describe our approach to fitting appropriate jerk profiles to complex sub-paths. 
 We first break each sub-path into segments where the constraint values can be considered constant.
 Then each segment can be compared to a library of possible jerk profiles to find a good match.
-Each segment is defined by the vector $\mathbf{b}  = [v_i, a_i, L, v_m, v_f]$, being initial speed, initial acceleration, the total distance, speed limit, and the final speed, respectively.
+Each segment is defined by the vector $\mathbf{b}  = [v_i, a_i, L, v_m, v_f]$, with parameters initial speed, initial acceleration, total distance, speed limit, and the final speed, respectively.
 Additionally, the desired positive and negative acceleration $\mathbf{a}_m = [a^+_m , a^-_m]$ and the desired positive and negative jerk $\mathbf{j}_m = [j^+_m , j^-_m]$ are defined for each segment.
 For this work, they are set constant for all segments.
 However, this functionality enables behaviors such as more sedate driving in a school zone or when traversing small areas with lower friction coefficients, such as patches of ice or gravel detected via camera.
@@ -330,25 +332,26 @@ are found for every point in the given sub-path.
 The {\it Ceiling Calculation} is a minimax problem.
 Each of the 9 scalars in $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ is a minimum of several maxima computed from an arbitrary set of constraints.
 For instance, acceleration constraints may include a set of limits derived from friction coefficients at every point along the sub-path.
-Any number of constraint sets may be used to compute the ceiling.
+%Any number of constraint sets may be used to compute the ceiling.
 
 % How we actually did this.
-For the purposes of developing a simple example application, two constraints will be used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{B,y}^{max}$. 
+For the purposes of developing a simple example application, two constraints are used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{B,y}^{max}$. 
 Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation :
 \begin{equation}
   v_{m,w}(a_{B,y}) = \sqrt{ | a_{B,y}^{max} / \kappa_{w} | } ~,~ w = 1, ..., W
 \end{equation}
-where $W$ is the number of waypoints in the sub-path, and $\kappa_{k_P}$ denotes the path curvature at each point.
+where $W$ is the number of waypoints in the sub-path, and $\kappa_{w}$ denotes the path curvature at each point.
 For each sub-path point, the value $v_{m,w}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration $a^{max}_{B,y}$.
 
 This information is used to choose the segment boundaries in the {\it Clustering} step.
-Any clustering algorithm may be used here, and a prudent choice of segment boundaries is arguably one of the most critical pieces of trajectory planning process.
+%Any clustering algorithm may be used here, and 
+A prudent choice of segment boundaries is arguably a critical piece of the trajectory planning process.
 We choose a simple univariate heuristic which effectively identifies curves in the roadway using only the speed ceiling.
-Each time $v_{m,w} < SL$ becomes true, a curve is beginning, and a segment boundary is drawn.
-Each time $v_{m,w} = SL$ is once again true, the current curve has ended, and another segment boundary is drawn.
+Each time $v_{m,w} < SL$ becomes true, a curve is begun, and a segment boundary is drawn.
+Each time $v_{m,w} = SL$ is again true, the current curve is ended, and another segment boundary is drawn.
 
 Figure \ref{fig:1Dto2DandSegmentation} shows the result of this Clustering algorithm. 
-We start with a sub-path which is similar in structure to the green sub-path in Fig. \ref{fig:subpathdivision}.
+We start with a sub-path similar in structure to the green sub-path in Fig. \ref{fig:subpathdivision}.
 This sub-path is broken up into five segments as shown in Fig. \ref{fig:1Dto2DandSegmentationa}.
 The three segments shown in blue correspond to more straight portions, and the two shown in red correspond to more curved portions.
  
@@ -384,10 +387,10 @@ The value of the speed ceiling for segment $k$ is chosen to be:
 \begin{equation}
   v_{m,k} = min \left ( \mathbf{SL}_k ,  \mathbf{v}_{m}(a_{B,y}^{max}) |_k \right )
 \end{equation}
-where $\mathbf{SL}_k$ is the vector containing the values of the legal speed limit at every waypoint in segment $k$.
-The vector $\mathbf{v}_{m}(a_{B,y}^{max}) |_k$ contains the values of the speed limit from lateral acceleration at every waypoint in segment $k$.
+where $\mathbf{SL}_k$ is the vector containing the values of the legal speed limit at every way-point in segment $k$.
+The vector $\mathbf{v}_{m}(a_{B,y}^{max}) |_k$ contains the values of the speed limit from lateral acceleration at every way-point in segment $k$.
 % The minimum of scalar across all constituent points is chosen.
-While not time optimal, choosing the minimum of these values over the entire segment ensures that no constraints are violated, and as a result, many of the curves will have a constant speed.
+While not time optimal, choosing the minimum of these values over the entire segment ensures that no constraints are violated. As a result, many of the curves have a constant speed.
 For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are initially all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
 Once the values $v_{m,k}$ are set for every segment in the subpath, boundary conditions must be set to ensure that speed is continuous between segments. Acceleration continuity will be addressed later.
 The algorithm in Fig. \ref{alg:segmentspeedboundaryconditions} is used to compute the vector $\mathbf{v}_p$ and then each segment $k$ can be solved using:
@@ -396,7 +399,7 @@ The algorithm in Fig. \ref{alg:segmentspeedboundaryconditions} is used to comput
 \end{equation}
 
 The values of $a_i$ and $v_i$ for the first segment are set to the value currently reported from sensor data.
-Since the final acceleration is to be set to zero for all profiles, each subsequent segment may begin with $a_i = 0$.
+Since the final acceleration is set to zero for all profiles, each subsequent segment may begin with $a_i = 0$.
 For the final segment, setting $v_f = 0$ is prudent unless the scenario demands otherwise.
 
 
@@ -428,15 +431,15 @@ A jerk vs. time profile is fit to each segment using the algorithm described in 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Fitting Jerk Profiles to Each Segment} \label{sec:jerkprofiles}
+\subsection{Fitting Jerk Profiles to each Segment} \label{sec:jerkprofiles}
 
-To introduce the process of computing a jerk profile for each segment, let us consider the case in which a vehicle needs to travel some arbitrary distance ahead.
-The vehicle is moving at an initial speed and needs to accelerate to a traveling speed, maintain that speed for some distance, then brake to a stop at a prescribed end location.
+To introduce the process of computing a jerk profile for each segment, we consider the case where a vehicle needs to travel an arbitrary distance ahead.
+Starting from an initial speed, the vehicle needs to accelerate to a traveling speed, maintain that speed for some distance, then brake to a stop at a prescribed end location.
 Figure \ref{fig:full7phasespec} shows this trajectory over time.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=1.0\columnwidth]{graphics/Full7PhaseSpecVertical.png}
+  \includegraphics[width=0.8\columnwidth]{graphics/Full7PhaseSpecVertical.png}
   \caption{
     7-phase constant jerk profile along the curvilinear distance axis.
     All values needed to completely parameterize a single path segment for trajectory are labeled here.}
@@ -451,15 +454,16 @@ To enable this, ranges of acceptable longitudinal jerk and acceleration $\mathbf
 In the simplest case, one value for each of the quantities expressed in these relations may be chosen for the entire path.
 
 \begin{equation}
-  a^{+,max}_m >= a^+_m > 0 > a^-_m >= a^{-,max}_m
+  a^{+,max}_m \geqslant a^+_m > 0 > a^-_m \geqslant a^{-,max}_m
   \label{eq:am}
 \end{equation}
 \begin{equation}
-  j^{+,max}_m >= j^+_m > 0 > j^-_m >= j^{-,max}_m
+  j^{+,max}_m \geqslant j^+_m > 0 > j^-_m \geqslant j^{-,max}_m
   \label{eq:jm}
 \end{equation}
 
-We propose to define 4 other basic profiles to cover all feasible values in $\mathbf{b}$, and our algorithm judiciously chooses the appropriate profile. These 4 profiles cover cases in which the 7-phase solution fails. For instance, if $L$ is too short or $v_m$ is too high, then it will not be possible to ever reach $v_m$ with realistic values of $\mathbf{a}_m$ and $\mathbf{j}_m$.
+The 7 phase solution is time optimal as it drives the car at the speed limit. However, sometimes the distance is too small to get up-to the speed limit, or the boundary conditions are different, such as going from a specific speed to a stop. We define 4 other basic profiles to cover all feasible values in $\mathbf{b}$, and our algorithm judiciously chooses the appropriate profile. %These 4 profiles cover cases in which the 7-phase solution fails. 
+For instance, if $L$ is too short or $v_m$ is too high, then it will not be possible to ever reach $v_m$ with realistic values of $\mathbf{a}_m$ and $\mathbf{j}_m$.
 %The other profiles are explained below.
 All impossible scenarios are automatically ruled out (e.g., end speed above speed limit, traveling speed of zero, negative speeds in $\mathbf{b}$, etc).
 It should be noted that traveling backward (i.e., in reverse gear) is not supported in this work.
@@ -586,7 +590,7 @@ Reformulating a new 3-phase jerk profile accordingly is a simple matter for the 
 Now appropriate values of $a_m^-$ and $j_m^-$ must be chosen to completely parameterize the trajectory.
 For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used and the distance traversed in the resultant trajectory is reported as the current value of $\Delta s_{RSTOP}$.
 
-Once the path manager triggers RSTOP, the trajectory is then recomputed with increasingly higher absolute values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} <= \Delta s_{avail}$.
+Once the path manager triggers RSTOP, the trajectory is then recomputed with increasingly higher absolute values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} \leqslant \Delta s_{avail}$.
 Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
 
 % After this, the spline creation procedure detailed in Sec. \ref{sec:unifiedsolution} is performed.
@@ -603,7 +607,7 @@ The vehicle now begins sampling from this trajectory and executes a smooth react
 %\end{figure}
 
 However, the time at which the trajectory plan must be referenced is not always known.
-The solution to this problem is known as trajectory tracking, and will be discussed in the next section.
+The solution to this problem is known as trajectory tracking, and is discussed in the next section.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -620,7 +624,7 @@ It is assumed that the vehicle controller will need samples of a small window in
 
 \begin{figure}[thpb]
   \centering
-  \includegraphics[width=0.8\columnwidth]{graphics/PathProjectionSlice.png}
+  \includegraphics[width=0.65\columnwidth]{graphics/PathProjectionSlice.png}
   \caption{Showing projection of the current position of the car shown by green triangle to s coordinate system. Each circle represents a node, and the lines between them are links. The orange dots indicate future trajectory samples which are sent to the controller.
   }
 
@@ -635,7 +639,7 @@ From there it is a matter of simple geometry to transform these values into the 
 % \subsection{Path Projection} \label{sec:pathprojection}
 
 Several algorithms exist to find the optimal projection of the target vehicle's present kinematic state (position, velocity and acceleration vectors) onto the path.
-A simple approximation is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a ``link'', and is depicted in Fig. \ref{fig:cartos}).
+A simple approximation is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a {\it link}, and is depicted in Fig. \ref{fig:cartos}).
 Projections which lie outside of the link's two constituent path points are snapped to the nearest one.
 The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection $\mathbf{r}_p$.
 Any number of modifications can be made using heading, velocity vectors, and previous information to allow this method to be extended to complex overlapping paths or self-intersections.
@@ -656,7 +660,7 @@ Evaluating $t(s_{veh})$ then yields the current reference time.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-To summarize, in the last three sections we described how an urban path is broken into sub-paths. We 
+To summarize, in the last three sections we described breaking an urban path into sub-paths. We 
 explained the computation of velocity and jerk profile for segments within sub-paths that honor constraints
 for speed, velocity and acceleration as well as reactively slow down or stop for pedestrians on
 the urban path. We then described how our trajectory plan is supplied regularly in real-time to the
