@@ -272,9 +272,9 @@ It should be noted that there is a brief waiting period before resuming NORMAL m
 
 \begin{figure}[tb]
 \centering
-  \subfigure[In NORMAL mode, RSTOP is now triggered.]{\includegraphics[width=0.8\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}}
+  \subfigure[In NORMAL mode, RSTOP is now triggered.]{\includegraphics[width=0.75\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}}
   \\
-  \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=0.9\columnwidth]{graphics/RSTOP_Replan.png}}
+  \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=0.85\columnwidth]{graphics/RSTOP_Replan.png}}
   \\
   \subfigure[PSTOP diagram showing bounds for reverting to NORMAL mode.]{\includegraphics[width=0.7\columnwidth]{graphics/RSTOP_Resume.png}}
   \caption{Graphical representation of static and dynamic thresholds used to trigger state transitions.}
@@ -355,7 +355,7 @@ We start with a sub-path similar in structure to the green sub-path in Fig. \ref
 This sub-path is broken up into five segments as shown in Fig. \ref{fig:1Dto2DandSegmentationa}.
 The three segments shown in blue correspond to more straight portions, and the two shown in red correspond to more curved portions.
  
-\begin{figure}[thpb]
+\begin{figure}[tb]
   \centering
   \subfigure[
     The result of dividing a single sub-path into separate segments.
@@ -622,7 +622,7 @@ As such, we must find a way to look up the coordinates of the vehicle within the
 A minimal set of such information includes position, velocity vector, heading, and acceleration in the body frame.
 It is assumed that the vehicle controller will need samples of a small window into the future trajectory to pilot the vehicle.
 
-\begin{figure}[thpb]
+\begin{figure}[tb]
   \centering
   \includegraphics[width=0.65\columnwidth]{graphics/PathProjectionSlice.png}
   \caption{Showing projection of the current position of the car shown by green triangle to s coordinate system. Each circle represents a node, and the lines between them are links. The orange dots indicate future trajectory samples which are sent to the controller.
