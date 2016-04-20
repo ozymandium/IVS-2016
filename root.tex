@@ -335,13 +335,13 @@ For instance, acceleration constraints may include a set of limits derived from 
 %Any number of constraint sets may be used to compute the ceiling.
 
 % How we actually did this.
-For the purposes of developing a simple example application, two constraints are used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{B,y}^{max}$. 
+For the purposes of developing a simple example application, two constraints are used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{y}^{max}$. 
 Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation :
 \begin{equation}
-  v_{m,w}(a_{B,y}) = \sqrt{ | a_{B,y}^{max} / \kappa_{w} | } ~,~ w = 1, ..., W
+  v_{m,w}(a_{y}) = \sqrt{ | a_{y}^{max} / \kappa_{w} | } ~,~ w = 1, ..., W
 \end{equation}
 where $W$ is the number of waypoints in the sub-path, and $\kappa_{w}$ denotes the path curvature at each point.
-For each sub-path point, the value $v_{m,w}(a_{B,y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration $a^{max}_{B,y}$.
+For each sub-path point, the value $v_{m,w}(a_{y}^{max})$ denotes the speed necessary to obtain the limit lateral acceleration $a^{max}_{y}$.
 
 This information is used to choose the segment boundaries in the {\it Clustering} step.
 %Any clustering algorithm may be used here, and 
@@ -374,7 +374,7 @@ The three segments shown in blue correspond to more straight portions, and the t
     The resultant speed ceiling ($v_m$) is shown in blue.
   ]{
   \label{fig:1Dto2DandSegmentationb}
-  \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling.png}
+  \includegraphics[width=0.8\columnwidth]{graphics/speed_ceiling2.PNG}
   }
   \caption{Dividing a subpath into segments and determining speed ceilings for each segment.}
   \label{fig:1Dto2DandSegmentation}
@@ -382,13 +382,13 @@ The three segments shown in blue correspond to more straight portions, and the t
 
 In the consolidation step, a single set of $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$ 
 must be calculated for each segment using the values corresponding to the waypoints comprising the segment.
-The principle task is to find a value of $v_m$ for each segment using the values from segmentation, $SL$ and $v_{m,w}(a_{B,y}^{max})$. 
+The principle task is to find a value of $v_m$ for each segment using the values from segmentation, $SL$ and $v_{m,w}(a_{y}^{max})$. 
 The value of the speed ceiling for segment $k$ is chosen to be:
 \begin{equation}
-  v_{m,k} = min \left ( \mathbf{SL}_k ,  \mathbf{v}_{m}(a_{B,y}^{max}) |_k \right )
+  v_{m,k} = min \left ( \mathbf{SL}_k ,  \mathbf{v}_{m}(a_{y}^{max}) |_k \right )
 \end{equation}
 where $\mathbf{SL}_k$ is the vector containing the values of the legal speed limit at every way-point in segment $k$.
-The vector $\mathbf{v}_{m}(a_{B,y}^{max}) |_k$ contains the values of the speed limit from lateral acceleration at every way-point in segment $k$.
+The vector $\mathbf{v}_{m}(a_{y}^{max}) |_k$ contains the values of the speed limit from lateral acceleration at every way-point in segment $k$.
 % The minimum of scalar across all constituent points is chosen.
 While not time optimal, choosing the minimum of these values over the entire segment ensures that no constraints are violated. As a result, many of the curves have a constant speed.
 For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are initially all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
@@ -563,10 +563,10 @@ It is now possible to integrate $j(t)$ to determine an instantaneous trajectory 
 
 % After stitching together control point vectors for time, position, and its derivatives, all information required to have a trajectory plan is now in place.
 % To aid in this, univariate splines are created with time as the independent variable, using the control points as knots.
-% Position along the path as a function of reference plan time, $s(t)$, takes the form of a cubic Hermite spline, constructed using the speed control points $v_{B,x}(t)$ to set the derivatives.
-% Speed along the path $v_{B,x}(t)$ takes the form of a quadratic Hermite spline, with the acceleration control points $a_{B,x}(t)$ used to set the derivatives at every knot.
-% Acceleration $a_{B,x}(t)$ is piecewise linear, so lookup is a trivial matter.
-% The same applies to $j_{B,x}(t)$, which may be implemented with a simple table.
+% Position along the path as a function of reference plan time, $s(t)$, takes the form of a cubic Hermite spline, constructed using the speed control points $v_{x}(t)$ to set the derivatives.
+% Speed along the path $v_{x}(t)$ takes the form of a quadratic Hermite spline, with the acceleration control points $a_{x}(t)$ used to set the derivatives at every knot.
+% Acceleration $a_{x}(t)$ is piecewise linear, so lookup is a trivial matter.
+% The same applies to $j_{x}(t)$, which may be implemented with a simple table.
 
 % However, the time at which the trajectory plan must be referenced is not always known.
 % The solution to this problem is known as trajectory tracking control, and will be discussed in Sec. \ref{sec:trajectorytracking}.
@@ -650,7 +650,7 @@ So $s_{veh}$ at any epoch is the sum of the link lengths behind its perpendicula
 However, the error in this approximation approaches zero as the spacing between path points approaches zero.
 Other, more accurate, approximations which work well include cubic splines, arc splines, and Bezier curves, which have solutions for closest point projection and arc-length calculation~\cite{Wang2002,Wang2003,Schindler2011}.
 
-Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to look up $v_{B,x}(t_{veh})$, $a_{B,x}(t_{veh})$, and $j_{B,x}(t_{veh})$.
+Now the reference time corresponding to the vehicle's location $t_{veh}$ is needed to look up $v_{x}(t_{veh})$, $a_{x}(t_{veh})$, and $j_{x}(t_{veh})$.
 Additionally, it is also needed to sample $s(t)$ at intervals ahead of the vehicle.
 Since it is known that $s(t)$ is piecewise cubic, reference time as a function of vehicle position along the path, $t(s)$, may be approximated as cubic using a spline.
 To get the knots, $s(t)$ is sampled at $\Delta t = 0.01 sec$.
