@@ -588,7 +588,7 @@ Reformulating a new 3-phase jerk profile accordingly is a simple matter for the 
 % The trajectory planner uses total distance as parameter, and is not suitable for our purpose as the end speed constraints are not met. So we reformulate and replace $L$ with $v_f$ as the hard constraint.
 
 Now appropriate values of $a_m^-$ and $j_m^-$ must be chosen to completely parameterize the trajectory.
-For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used and the distance traversed in the resultant trajectory is reported as the current value of $\Delta s_{RSTOP}$.
+For calculating $\Delta s_{RSTOP}$, the same set of values from normal planning is used and the distance traversed in the resultant trajectory is reported as the current value of $\Delta s_{RSTOP}$. This is the procedure for computing the dynamic, speed-dependent distance required to stop at any epoch.
 
 Once the path manager triggers RSTOP, the trajectory is then recomputed with increasingly higher absolute values of $a_m^-$ and $j_m^-$ until $\Delta s_{RSTOP} \leqslant \Delta s_{avail}$.
 Should one of the values $a_m^-$ or $j_m^-$ required to fulfill this condition exceed the limits $a_m^{-,max}$ or $j_m^{-,max}$, then limit braking parameters are set such that $a_m^-=a_m^{-,max}$ and $j_m^-=j_m^{-,max}$, and the user is alerted.
