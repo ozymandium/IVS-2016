@@ -122,7 +122,7 @@ Section \ref{sec:trajectoryplanning} describes trajectory planning to generate a
 %We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
 Once the trajectory plan is formulated, we send the reference signal to the controllers that govern steering, braking, and engine speed.
 This is the trajectory tracking and is discussed in Section \ref{sec:trajectorytracking},
-followed by conclusions and future extensions.
+followed by results and conclusions.
 % tracking
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -236,9 +236,6 @@ The Frenet axis which runs along the length of the planned path is denoted by $s
 Differences along this axis ($\Delta s$) correspond to distances the car will actually travel.
 Mapping back to Cartesian coordinates (necessary for trajectory tracking) is well-discussed in the literature.
 
-Our Path Manager is implemented as a discrete state machine, depicted in Fig. \ref{fig:st}.
-Each of the states is described below.
-
 \begin{figure}[tb]
   \centering
   \includegraphics[width=0.9\columnwidth]{graphics/state_transition.PNG}
@@ -246,6 +243,8 @@ Each of the states is described below.
   \label{fig:st}
 \end{figure}
 
+Our Path Manager is implemented as a discrete state machine, depicted in Fig. \ref{fig:st}.
+%Each of the states is described below.
 In the absence of pedestrians, the path manager cycles between NORMAL and PSTOP states.
 In NORMAL state, the path manager sends the first subpath to the trajectory planner, which then plans and executes it before coming to a stop at the end of the subpath.
 In PSTOP mode, the path manager waits for a pre-set time duration before returning to NORMAL mode, where the next subpath is executed.
@@ -253,7 +252,7 @@ When pedestrians are present, the transition from PSTOP to NORMAL is delayed unt
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.5\columnwidth]{graphics/Subpaths.png}
+  \includegraphics[width=0.4\columnwidth]{graphics/Subpaths.png}
   \caption{
     Dividing the path into sub-paths at stop signs.
     The Trajectory Planner is serially called for each sub-path shown in different color.
@@ -267,11 +266,12 @@ Pedestrians that are on a different subpath than the vehicle, or behind the vehi
 All the remaining pedestrians pose potential collision risks. However, only the closest pedestrian is considered for RSTOP.
 
 The distinction between momentarily braking for a pedestrian that quickly leaves the roadway and coming to a full stop needs no separate logic.
-They follow the same state transition, and since all trajectory plans are extremely smooth, riders are rarely aware that any change took place.
-It should be noted that there is a brief waiting period before resuming NORMAL mode from RSTOP to ensure no tracking errors in the pedestrian detection algorithm.
+They follow the same state transition, and since all trajectory plans are smooth, riders are rarely aware that any change took place.
+There is a brief waiting period before resuming NORMAL mode from RSTOP to ensure no tracking errors in pedestrian detection.
 
 \begin{figure}[tb]
-\centering
+%\captionsetup[subfigure]{width=\columnwidth}
+\centering%\captionsetup{width=\columnwidth}
   \subfigure[In NORMAL mode, RSTOP is now triggered.]{\includegraphics[width=0.75\columnwidth]{graphics/RSTOP_NORMAL_time_to_stop.png}}
   \\
   \subfigure[RSTOP diagram showing bounds for revising the RSTOP trajectory.]{\includegraphics[width=0.85\columnwidth]{graphics/RSTOP_Replan.png}}
@@ -391,15 +391,15 @@ where $\mathbf{SL}_k$ is the vector containing the values of the legal speed lim
 The vector $\mathbf{v}_{m}(a_{y}^{max}) |_k$ contains the values of the speed limit from lateral acceleration at every way-point in segment $k$.
 % The minimum of scalar across all constituent points is chosen.
 While not time optimal, choosing the minimum of these values over the entire segment ensures that no constraints are violated. As a result, many of the curves have a constant speed.
-For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are initially all set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
-Once the values $v_{m,k}$ are set for every segment in the subpath, boundary conditions must be set to ensure that speed is continuous between segments. Acceleration continuity will be addressed later.
-The algorithm in Fig. \ref{alg:segmentspeedboundaryconditions} is used to compute the vector $\mathbf{v}_p$ and then each segment $k$ can be solved using:
+For the sake of simplicity, the values of $a^+_{m,k}$, $a^-_{m,k}$, $j^+_{m,k}$, and $j^-_{m,k}$ are initially set constant for the entire path, using values from \cite{Maurya2012,Hoberock1977,Long2000}.
+Once $v_{m,k}$ are set for every segment in the subpath, boundary conditions are set to ensure that speed is continuous between segments. Acceleration continuity is addressed later.
+The algorithm in Fig. \ref{alg:segmentspeedboundaryconditions} is used to compute the vector $\mathbf{v}_p$ and each segment $k$ is solved using:
 \begin{equation}
   v_{i,k} = v_{f,k-1} = v_{p,k}
 \end{equation}
 
 The values of $a_i$ and $v_i$ for the first segment are set to the value currently reported from sensor data.
-Since the final acceleration is set to zero for all profiles, each subsequent segment may begin with $a_i = 0$.
+Since the final acceleration is set to zero for all profiles, each subsequent segment begins with $a_i = 0$.
 For the final segment, setting $v_f = 0$ is prudent unless the scenario demands otherwise.
 
 
@@ -426,7 +426,7 @@ For the final segment, setting $v_f = 0$ is prudent unless the scenario demands 
 \label{alg:segmentspeedboundaryconditions}
 \end{figure}
 
-Now that all segments within the subpath have been parameterized, they may be solved sequentially.
+Now that all segments within the subpath have been parameterized, they are solved sequentially.
 A jerk vs. time profile is fit to each segment using the algorithm described in the next sub-section.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -439,7 +439,7 @@ Figure \ref{fig:full7phasespec} shows this trajectory over time.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.8\columnwidth]{graphics/Full7PhaseSpecVertical.png}
+  \includegraphics[width=0.7\columnwidth]{graphics/Full7PhaseSpecVertical.png}
   \caption{
     7-phase constant jerk profile along the curvilinear distance axis.
     All values needed to completely parameterize a single path segment for trajectory are labeled here.}
@@ -451,7 +451,7 @@ Final forward acceleration is set to zero.
 A profile with $M$ constant jerk phases (7 in this case) can be generated by solving for the time intervals $[\Delta t_1, ..., \Delta t_M]$.
 As we show later, $\mathbf{a}_m$, and $\mathbf{j}_m$ must sometimes be modified to obtain physically possible time intervals.
 To enable this, ranges of acceptable longitudinal jerk and acceleration $\mathbf{a}^{max}_m = [a^{+,max}_m , a^{-,max}_m]$ and $\mathbf{j}^{max}_m = [j^{+,max}_m , j^{-,max}_m]$ are set according to the relation in Eqs. \ref{eq:am} and \ref{eq:jm}.
-In the simplest case, one value for each of the quantities expressed in these relations may be chosen for the entire path.
+In the simplest case, one value for each of the quantities expressed in these relations is chosen for the entire path.
 
 \begin{equation}
   a^{+,max}_m \geqslant a^+_m > 0 > a^-_m \geqslant a^{-,max}_m
@@ -462,14 +462,14 @@ In the simplest case, one value for each of the quantities expressed in these re
   \label{eq:jm}
 \end{equation}
 
-The 7 phase solution is time optimal as it drives the car at the speed limit. However, sometimes the distance is too small to get up-to the speed limit, or the boundary conditions are different, such as going from a specific speed to a stop. We define 4 other basic profiles to cover all feasible values in $\mathbf{b}$, and our algorithm judiciously chooses the appropriate profile. %These 4 profiles cover cases in which the 7-phase solution fails. 
+The 7 phase solution is time optimal as it drives the car at the speed limit. However, sometimes the distance is too small to get up-to the speed limit, or the boundary conditions are different, such as going from a specific speed to a stop. We define four other basic profiles to cover all feasible values in $\mathbf{b}$, and our algorithm judiciously chooses the appropriate profile. %These 4 profiles cover cases in which the 7-phase solution fails. 
 For instance, if $L$ is too short or $v_m$ is too high, then it will not be possible to ever reach $v_m$ with realistic values of $\mathbf{a}_m$ and $\mathbf{j}_m$.
 %The other profiles are explained below.
 All impossible scenarios are automatically ruled out (e.g., end speed above speed limit, traveling speed of zero, negative speeds in $\mathbf{b}$, etc).
-It should be noted that traveling backward (i.e., in reverse gear) is not supported in this work.
+Traveling backward (i.e., in reverse gear) is not supported in this work.
 To find closed-form solutions for $[\Delta t_1, ..., \Delta t_M]$, given $\mathbf{b}$, $\mathbf{a}_m$, and $\mathbf{j}_m$, a symbolic solver is used 
 %\textbf{RG: can specify solver name???} .
-These 4 profiles are:
+The five jerk profiles in our {\it Jerk Library} are:
 
 \subsubsection{7-phase} \label{sec:7phase}
 
@@ -477,7 +477,7 @@ This profile, with $\Delta t_i$ as shown in Figure \ref{fig:full7phasespec}, is 
 All time steps have a single solution, enabled by the fact that the initial and end conditions are known, and the two peak accelerations and two jerk magnitudes are provided as configuration parameters.
 In the case where $\Delta t_2$ or $\Delta t_6$ are negative, accel-jerk tuning must be employed.
 The 7-phase profile can be expressed as $( j_1 > 0 , j_2 = 0 , j_3 < 0 , j_4 = 0 , j_5 < 0 , j_6 = 0 , j_7 > 0 )$.
-In the instance where $\Delta t_4$ is negative, the total segment length $L$ is too short to reach top speed of $v_m$, so a 6-phase profile must be used.
+When $\Delta t_4$ is negative, the total segment length $L$ is too short to reach top speed of $v_m$, so a 6-phase profile must be used.
 
 \subsubsection{6-phase} \label{sec:6phase}
 
@@ -489,8 +489,8 @@ The positive solution is chosen.
 In the case where both solutions are negative, accel-jerk tuning is attempted. 
 The 6-phase profile can be expressed as $( j_1 > 0 , j_2 = 0 , j_3 < 0 , j_4 < 0 , j_5 = 0 , j_6 > 0 )$
 Should that yield no positive time intervals, one of the two 4-phase profiles then becomes appropriate, since $L$ is not large enough to accommodate accelerating past the end speed.
-If $v_i > v_f$, then a reversed 4-phase profile is attempted.
-However, if $v_i > v_f$, then a regular 4-phase profile is attempted.
+If $v_i > v_f$, then a 4-phase profile is attempted. Else 
+if $v_i > v_f$, then a reversed 4-phase profile is attempted.
 
 \begin{figure}[tb]
   \centering
@@ -538,22 +538,21 @@ When these discrepancies in the feasible $v_f$ for a segment arise, the correspo
 The 3-phase profile can be expressed as $(j_1 \pm 0 , j_2 = 0, j_3 \mp 0 )$
 
 % \subsection{Stitching Segment Solutions Together} \label{sec:unifiedsolution}
-For each of the profiles, it is possible that the chosen values of $\mathbf{a}_m$ and $\mathbf{j}_m$ will not be feasible for a desired speed at the end of the phase.
-This results in a negative time interval for one or more phases.
+For each of the profiles, it is possible that the chosen values of $\mathbf{a}_m$ and $\mathbf{j}_m$ is not feasible, % for a desired speed at the end of the phase.
+resulting in a negative time interval for one or more phases.
 In many cases, modifying $\mathbf{a}_m$ and $\mathbf{j}_m$ such that they still lie within $\mathbf{a}^{max}_m$ and $\mathbf{j}^{max}_m$ will remedy this.
 Specifically, jerk may be increased while peak acceleration is decreased.
-This process is referred to herein as ``accel-jerk tuning''.
-If no acceptable values are found within the valid ranges of $\mathbf{a}^{max}_m$ and $\mathbf{j}^{max}_m$, a new jerk profile must be chosen.
+This process is referred to herein as {\it accel-jerk tuning}.
+If no acceptable values are found within the valid ranges of $\mathbf{a}^{max}_m$ and $\mathbf{j}^{max}_m$, a different jerk profile must be chosen.
 
 To decide which profile to employ, a cascade approach is used.
 Analytic values of time intervals are evaluated for each profile by plugging in new values of $\mathbf{a}_m$ and $\mathbf{j}_m$ until all time intervals are positive and real.
 The order in which they are attempted is: 7 $\rightarrow$ 6 $\rightarrow$ 4 / 4R $\rightarrow$ 3.
-Each has been described above.
-The routines for fitting a profile to a given $\mathbf{b}, \mathbf{a}_m, \mathbf{j}_m$ to a segment using this cascade approach is referred to as a ``jerk library''.
+%Each has been described above.
+The routines for fitting a profile to a given $\mathbf{b}, \mathbf{a}_m, \mathbf{j}_m$ to a segment using this cascade approach is referred to as a {\it Jerk Library}.
 
 At this point, the subpath has been divided into segments and an analytically derived plan has been fit to each segment individually.
 Now a unified reference trajectory must be constructed by stitching these together.
-
 For each segment with $M$ jerk phases, the following values are computed, which correspond to the instants at which jerk changes:
 \begin{itemize}
   \item $M$ time durations $\Delta t_{ref}$. These must be added to the last time value from the previous segment to translate them into reference time.
@@ -606,7 +605,7 @@ The vehicle now begins sampling from this trajectory and executes a smooth react
 %  \label{fig:pathtostop}
 %\end{figure}
 
-However, the time at which the trajectory plan must be referenced is not always known.
+The time at which the trajectory plan must be referenced is not always known.
 The solution to this problem is known as trajectory tracking, and is discussed in the next section.
 
 
@@ -644,6 +643,7 @@ Projections which lie outside of the link's two constituent path points are snap
 The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection $\mathbf{r}_p$.
 Any number of modifications can be made using heading, velocity vectors, and previous information to allow this method to be extended to complex overlapping paths or self-intersections.
 
+
 Choice of an algorithm to obtain the current position of the vehicle along the length of the path $s_{veh}$ is influenced by the form of the path plan.
 We assume that the path is linear between waypoints to significantly reduce the computational effort.
 So $s_{veh}$ at any epoch is the sum of the link lengths behind its perpendicular projection $\mathbf{r}_p$.
@@ -666,16 +666,23 @@ for speed, velocity and acceleration as well as reactively slow down or stop for
 the urban path. We then described how our trajectory plan is supplied regularly in real-time to the
 autonomous car controller.
 
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=0.65\columnwidth]{graphics/results_final.png}
+  \caption{Planned speed and longitudinal acceleration vs. measured values}
+
+  \label{fig:results}
+\end{figure}
+
+
+\section{Results} \label{sec:results}
+
+Fig. \ref{fig:results} shows a planned and actual velocity and acceleration for the second sub-path between the two stop signs in Fig 5. Both velocity and acceleration track quite well. However the real acceleration is quite noisy. We have high jerk and acceleration to compensate for significant damping effects and time constants in the controller. %So we need high error to get the vehicle to move. 
+Our controller was tuned for interstate driving, so its behavior at low urban speeds has not been optimized leading to noisy acceleration.
+
 \section{Summary} \label{sec:summary}
 
 
-\begin{figure}[thpb]
-  \centering
-  \includegraphics[width=0.9\columnwidth]{graphics/results_final.png}
-  \caption{Planned speed and longitudinal acceleration vs. measureed values}
-
-  \label{fig:results_sort_of}
-\end{figure}
 
 
 In this paper, we have presented a novel real-time method for planning longitudinal trajectories in an autonomous car to follow an urban path with online updates to avoid pedestrians on the roadway by slowing down or stopping.
