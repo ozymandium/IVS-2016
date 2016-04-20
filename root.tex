@@ -669,14 +669,20 @@ autonomous car controller.
 \section{Summary} \label{sec:summary}
 
 
-In this paper, we have presented a novel real-time method for planning longitudinal trajectories 
-in an autonomous car to follow an urban path with online updates to avoid pedestrians on the roadway by slowing down or 
-stopping.
+\begin{figure}[thpb]
+  \centering
+  \includegraphics[width=0.9\columnwidth]{graphics/results_final.png}
+  \caption{caption here.}
+
+  \label{fig:results_sort_of}
+\end{figure}
+
+
+In this paper, we have presented a novel real-time method for planning longitudinal trajectories in an autonomous car to follow an urban path with online updates to avoid pedestrians on the roadway by slowing down or stopping.
 We built a robust stopping model as part of Trajectory Planner reliably integrated with the Path Manager.
-We can travel along a desired path, stop at stop signs, stop for pedestrians in the roadway, and continue after 
-they leave. Our system gracefully handles complex cases that were not explicitly programmed, such as following 
-pedestrians if they continue walking on the road away from the car. Our system works with multiple 
-pedestrians as we only need to consider the closest pedestrian ahead of us. 
+We can travel along a desired path, stop at stop signs, stop for pedestrians in the roadway, and continue after they leave.
+Our system gracefully handles complex cases that were not explicitly programmed, such as following pedestrians if they continue walking on the road away from the car. 
+Our system works with multiple pedestrians as we only need to consider the closest pedestrian ahead of us. 
 
 We make three contributions in this paper. First, we present an integrated trajectory planner that
 simultaneously limits jerk, velocity and acceleration to pre-set desired values while being responsive 
