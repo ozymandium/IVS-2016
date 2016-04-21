@@ -162,6 +162,15 @@ for p1 in fig_2_1, fig_2_2:
       if isinstance(single_item, pg.graphicsItems.LabelItem.LabelItem):
           single_item.setText(single_item.text, **legendLabelStyle)
 
+## RMS speed error
+
+speed_percent_error = []
+
+for k in range(len(veh_v2)):
+  # # if slice_v2[k] > 0:
+  # speed_percent_error.append( abs(veh_v2[k]-slice_v2[k])/slice_v2[k] )
+rms_speed_percent_error = np.sqrt(np.mean(np.square(speed_percent_error))) * 100
+print rms_speed_percent_error
 
 # win3 = pg.GraphicsWindow()
 # fig_3_1 = win3.addPlot(row=0, col=0)

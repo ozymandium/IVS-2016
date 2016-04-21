@@ -677,8 +677,8 @@ autonomous car controller.
 
 \section{Results} \label{sec:results}
 
-Fig. \ref{fig:results} shows a planned and actual velocity and acceleration for the second sub-path between the two stop signs in Fig 5. Both velocity and acceleration track quite well. However the real acceleration is quite noisy. We have high jerk and acceleration to compensate for significant damping effects and time constants in the controller. %So we need high error to get the vehicle to move. 
-Our controller was tuned for interstate driving, so its behavior at low urban speeds has not been optimized leading to noisy acceleration.
+Fig. \ref{fig:results} shows planned speed and acceleration for the second sub-path between the two stop signs in Fig \ref{fig:subpathdivision} (highlighted in green). Overlayed on top are measured values of both quantities, both of which track quite well. Note that they are not smoothed or bias-corrected, thus the acceleration is quite noisy. Relatively high jerk and acceleration are used to compensate for significant damping effects and time constants in the controller. %So we need high error to get the vehicle to move. 
+The controller used in this work was originally tuned for interstate driving, so its behavior at low urban speeds has not been optimized leading to noisy acceleration.
 
 \section{Summary} \label{sec:summary}
 
