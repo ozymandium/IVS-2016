@@ -95,23 +95,23 @@ for line in open(state_filen):
 #     slice_s: line 1538
 #     state: line 1554
 
-slice_v1 = slice_v[:412]
-slice_a1 = slice_a[:412]
-veh_s1 = veh_s[:412]
-veh_v1 = veh_v[16:428]
-veh_a1 = veh_a[16:428]
+slice_v1 = np.array(slice_v[:412])
+slice_a1 = np.array(slice_a[:412])
+veh_s1 = np.array(veh_s[:412])
+veh_v1 = np.array(veh_v[16:428])
+veh_a1 = np.array(veh_a[16:428])
 
-slice_v2 = slice_v[413:1538]
-slice_a2 = slice_a[413:1538]
-veh_s2 = veh_s[413:1538]
-veh_v2 = veh_v[428:1553]
-veh_a2 = veh_a[428:1553]
+slice_v2 = np.array(slice_v[413:1538])
+slice_a2 = np.array(slice_a[413:1538])
+veh_s2 = np.array(veh_s[413:1538])
+veh_v2 = np.array(veh_v[428:1553])
+veh_a2 = np.array(veh_a[428:1553])
 
-slice_v3 = slice_v[1538:2076]
-slice_a3 = slice_a[1538:2076]
-veh_s3 = veh_s[1538:2076]
-veh_v3 = veh_v[1553:]
-veh_a3 = veh_a[1553:]
+slice_v3 = np.array(slice_v[1538:2076])
+slice_a3 = np.array(slice_a[1538:2076])
+veh_s3 = np.array(veh_s[1538:2076])
+veh_v3 = np.array(veh_v[1553:])
+veh_a3 = np.array(veh_a[1553:])
 
 
 def quit(*args):
@@ -164,16 +164,19 @@ for p1 in fig_2_1, fig_2_2:
 
 ## RMS speed error
 
-speed_percent_error = []
+# speed_percent_error = []
+# error_range = range(50, len(veh_v2)-50)
+# for k in error_range:
+#   if slice_v2[k] > 0:
+#     speed_percent_error.append( abs(veh_v2[k]-slice_v2[k])/slice_v2[k] )
+#   else:
+#     speed_percent_error.append(0)
+# rms_speed_percent_error = np.sqrt(np.mean(np.square(speed_percent_error))) * 100
+# print rms_speed_percent_error
+# pg.plot(veh_s2[error_range], speed_percent_error)
 
-for k in range(len(veh_v2)):
-  if slice_v2[k] > 0:
-    speed_percent_error.append( abs(veh_v2[k]-slice_v2[k])/slice_v2[k] )
-  else:
-    speed_percent_error.append(0)
-pg.plot(veh_s2, speed_percent_error)
-rms_speed_percent_error = np.sqrt(np.mean(np.square(speed_percent_error))) * 100
-print rms_speed_percent_error
+rms_speed_error = np.sqrt(np.mean(np.square(veh_v2-slice_v2)))
+print rms_speed_error
 
 # win3 = pg.GraphicsWindow()
 # fig_3_1 = win3.addPlot(row=0, col=0)

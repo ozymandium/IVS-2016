@@ -677,10 +677,10 @@ autonomous car controller.
 \end{figure}
 
 
-\section{Results} \label{sec:results}
+   \label{sec:results}
 
-Fig. \ref{fig:results} shows planned speed and acceleration for the second sub-path between the two stop signs in Fig \ref{fig:subpathdivision} (highlighted in green). Overlayed on top are measured values of both quantities for a single autonomous driving run, both of which track quite well. Note that they are not smoothed or bias-corrected, thus the acceleration is quite noisy. Relatively high jerk and acceleration are used to compensate for significant damping effects and time constants in the controller. %So we need high error to get the vehicle to move. 
-The controller used in this work was originally tuned for interstate driving, so its behavior at low urban speeds has not been optimized leading to noisy acceleration.
+Fig. \ref{fig:results} shows planned speed and acceleration for the second sub-path between the two stop signs in Fig \ref{fig:subpathdivision} (highlighted in green). Overlayed on top are measured values of both quantities for a single autonomous driving run, both of which track quite well (the RMS speed error is $0.55 ~m/s$, though this is largely dependent upon the controller) . Note that they are not smoothed or bias-corrected, thus the acceleration is quite noisy. Relatively high jerk and acceleration are used to compensate for significant damping effects and time constants in the controller. %So we need high error to get the vehicle to move. 
+The controller used in this work was originally tuned for interstate driving, so its behavior at low urban speeds has not been optimized leading to significant steady state acceleration errors.
 
 \section{Summary} \label{sec:summary}
 
