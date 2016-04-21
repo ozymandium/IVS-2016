@@ -61,11 +61,11 @@ We have confirmed this with a test vehicle and pedestrians with over 100 hours o
 \section{Introduction} \label{sec:introduction}
 
 %When planning trajectories for 
-An autonomous ground vehicle operating on roadways, typically plans for trajectories with the goal of minimizing navigation time.
+An autonomous ground vehicle operating on roadways typically plans for trajectories with the goal of minimizing navigation time.
 % "path-trajectory" is improper. "path-velocity" is used extensively in the literature.
 It is common to employ the path-velocity decomposition to separate the twin tasks of Path and Trajectory Planning, so that these tasks can be run sequentially or in parallel.
 % (i.e., path planning is performed prior to planning the speed that the vehicle will take along the chosen path).
-{\it Path Planning} involves computation of the optimal path and {\it Trajectory Planning} involves the computation of a velocity profile appropriate for the scenario.
+{\it Path Planning} involves computation of the optimal path and {\it Trajectory Planning} involves the computation of a time-parameterized velocity profile appropriate for the scenario.
 
 Trajectory computation for traveling on the path is often guided by passenger comfort. 
 For human passengers, it is widely believed that high levels of jerk (time derivative of acceleration) and high acceleration and velocity values are prime contributors to ride discomfort.
@@ -103,13 +103,12 @@ Pedestrians on the sidewalks should be ignored by the car.
   \label{fig:car}
 \end{figure}
 
-We present an autonomy framework for pedestrian-aware ground vehicles
-with a novel method for planning longitudinal trajectories 
+We present a deterministic autonomy framework for pedestrian-aware ground vehicles with a novel method for planning longitudinal trajectories 
 %(the time derivatives of position in the body-forward direction) 
 along the desired path. %without requiring prior knowledge of travel time.
 Our method segments the path using a set of kinematic or dynamic constraints.
 Each segment is then planned sequentially by choosing a piecewise constant jerk profile.
-We intelligently choose a jerk profile from a set of pre-solved profiles such that acceleration is continuous and within limits throughout the entire path.
+We intelligently choose a jerk profile from a set of analytically solved profiles such that acceleration is continuous and within limits throughout the entire path.
 The resultant trajectory plan is then sampled to provide a reference for real-time vehicle control. %, which is called trajectory tracking. In urban environments, modifying the vehicle's intended path is often not possible. 
 % We are not doing control or tracking control. We're doing tracking.
 %We revise the trajectory plan online to safely avoid pedestrians by slowing down or stopping. % when no alternative paths are available.
@@ -134,11 +133,11 @@ Our system architecture is shown in Figure \ref{fig:addreact}. We have three maj
 
 The High-Level Planner is referred to as the {\it Path Manager}, and performs decision-making as well as governs operation of the low-level planner.
 Its primary functions are:
-\begin{enumerate}
+\begin{itemize}
   \item Stop the vehicle at stop signs and wait until the associated intersection is clear before continuing.
   \item Reactively reduce speed or stop altogether for pedestrians which pose a collision risk, then continue when they are clear.
   \item Govern the Trajectory Planner.
-\end{enumerate}
+\end{itemize}
 The Low-Level Planner is also referred to as the {\it Trajectory Planner}, and is responsible for quantifying the actions dictated by the Path Manager.
 Its primary functions are:
 \begin{itemize}
@@ -225,9 +224,9 @@ Pedestrians that are on sidewalks, behind planned stops, and off-path crosswalks
 \section{Path Manager} \label{sec:pathmanager}
 
 
-The Path Manager performs trajectory planning over a sliding window within the full path with the sliding window moving with the vehicle.
+The Path Manager performs trajectory planning over an incremental window within the full path.
 %As shown in Fig. \ref{fig:addreact}, a Path Planner passes paths into it as a 2D linestring.
-It breaks the path planner provided path into sub-paths at each stop location which are known a priori, as shown in Fig. \ref{fig:subpathdivision}. It then calls the Trajectory Planner for each sub-path.
+This is done by breaking the planned path into smaller sub-paths at each stop location which are known a priori, as shown in Fig. \ref{fig:subpathdivision}. Trajectory planning is then performed for each sub-path incrementally as the vehicle progresses.
 
 Prescribed initial and end conditions for the position, speed, and acceleration must be honored.
 All planning is longitudinal; that is, speed profile generation is the primary focus. We assume that the control subsystem ensures that the vehicle follows the prescribed path.
@@ -291,7 +290,7 @@ RSTOP is triggered when $\Delta s_{avail} \leqslant \Delta s_{RSTOP} + \Delta s_
 Planning and executing the trajectory for coming to a halt is detailed in Sec. \ref{sec:reactivestoptrajectory}.
 
 This procedure is repeated when the nearest pedestrian location changes by a value more than some static buffer $\Delta s_{replan} < \Delta s_{buf}$ compared to the location for which the current RSTOP planned.
-$\Delta s_{replan}$ value is typically set to 1 meter.
+% $\Delta s_{replan}$ value is typically set to 1 meter.
 Normal operation is resumed when the distance between the vehicle and the closest detected pedestrian satisfies $s_{ped} - s_{veh} > \Delta s_{resume} + \Delta s_{RSTOP}$. The static resume buffer should be set such that $\Delta s_{resume} > \Delta s_{buf} + \Delta s_{replan}$.
 These quantities are depicted graphically in Fig. \ref{fig:react}.
 Nominal parameter values are: $\Delta s_{buf} = 8.5 m$, $\Delta s_{replan} = 1.0 m$, $\Delta s_{resume} = 12.5 m$.
@@ -300,7 +299,7 @@ Nominal parameter values are: $\Delta s_{buf} = 8.5 m$, $\Delta s_{replan} = 1.0
 
 \section{Trajectory Planning} \label{sec:trajectoryplanning}
 
-The task of Trajectory Planning is to take a set of scalar waypoints in the frenet frame from the Path Manager, and compute a series of constant jerk intervals for longitudinal motion.% along the $s$-axis
+The task of Trajectory Planning is to take a set of scalar waypoints in the frenet frame from the Path Manager, and compute a series of constant jerk intervals for longitudinal motion. % along the $s$-axis
 The resulting trajectory should minimize time, and satisfy all the constraints on speed, acceleration, and jerk.
 %Elevation changes will not be addressed here.
 Integrating piecewise constant jerk over time yields acceleration which is piecewise linear over time, a speed which is piecewise quadratic over time, and position which is piecewise cubic over time.
@@ -433,7 +432,7 @@ A jerk vs. time profile is fit to each segment using the algorithm described in 
 
 \subsection{Fitting Jerk Profiles to each Segment} \label{sec:jerkprofiles}
 
-To introduce the process of computing a jerk profile for each segment, we consider the case where a vehicle needs to travel an arbitrary distance ahead.
+To introduce the process of computing a jerk profile for each segment, consider the case where a vehicle needs to travel an arbitrary distance ahead.
 Starting from an initial speed, the vehicle needs to accelerate to a traveling speed, maintain that speed for some distance, then brake to a stop at a prescribed end location.
 Figure \ref{fig:full7phasespec} shows this trajectory over time.
 
@@ -449,7 +448,7 @@ Figure \ref{fig:full7phasespec} shows this trajectory over time.
 
 Final forward acceleration is set to zero.
 A profile with $M$ constant jerk phases (7 in this case) can be generated by solving for the time intervals $[\Delta t_1, ..., \Delta t_M]$.
-As we show later, $\mathbf{a}_m$, and $\mathbf{j}_m$ must sometimes be modified to obtain physically possible time intervals.
+As we show later, $\mathbf{a}_m$, and $\mathbf{j}_m$ must sometimes be modified to obtain non-negative possible time intervals.
 To enable this, ranges of acceptable longitudinal jerk and acceleration $\mathbf{a}^{max}_m = [a^{+,max}_m , a^{-,max}_m]$ and $\mathbf{j}^{max}_m = [j^{+,max}_m , j^{-,max}_m]$ are set according to the relation in Eqs. \ref{eq:am} and \ref{eq:jm}.
 In the simplest case, one value for each of the quantities expressed in these relations is chosen for the entire path.
 
@@ -462,7 +461,9 @@ In the simplest case, one value for each of the quantities expressed in these re
   \label{eq:jm}
 \end{equation}
 
-The 7 phase solution is time optimal as it drives the car at the speed limit. However, sometimes the distance is too small to get up-to the speed limit, or the boundary conditions are different, such as going from a specific speed to a stop. We define four other basic profiles to cover all feasible values in $\mathbf{b}$, and our algorithm judiciously chooses the appropriate profile. %These 4 profiles cover cases in which the 7-phase solution fails. 
+The 7 phase solution is time optimal as it drives the car at the speed limit.
+However, sometimes the distance is too small to reach the speed limit, or the boundary conditions are different, such as going from a specific speed to a stop.
+We define four other basic profiles to cover all feasible values in $\mathbf{b}$, and our algorithm judiciously chooses the appropriate profile. %These 4 profiles cover cases in which the 7-phase solution fails. 
 For instance, if $L$ is too short or $v_m$ is too high, then it will not be possible to ever reach $v_m$ with realistic values of $\mathbf{a}_m$ and $\mathbf{j}_m$.
 %The other profiles are explained below.
 All impossible scenarios are automatically ruled out (e.g., end speed above speed limit, traveling speed of zero, negative speeds in $\mathbf{b}$, etc).
@@ -489,8 +490,8 @@ The positive solution is chosen.
 In the case where both solutions are negative, accel-jerk tuning is attempted. 
 The 6-phase profile can be expressed as $( j_1 > 0 , j_2 = 0 , j_3 < 0 , j_4 < 0 , j_5 = 0 , j_6 > 0 )$
 Should that yield no positive time intervals, one of the two 4-phase profiles then becomes appropriate, since $L$ is not large enough to accommodate accelerating past the end speed.
-If $v_i > v_f$, then a 4-phase profile is attempted. Else 
-if $v_i > v_f$, then a reversed 4-phase profile is attempted.
+If $v_i > v_f$, then a 4-phase profile is attempted.
+However, if $v_i > v_f$, then a reversed 4-phase profile is attempted.
 
 \begin{figure}[tb]
   \centering
@@ -638,6 +639,7 @@ From there it is a matter of simple geometry to transform these values into the 
 % \subsection{Path Projection} \label{sec:pathprojection}
 
 Several algorithms exist to find the optimal projection of the target vehicle's present kinematic state (position, velocity and acceleration vectors) onto the path.
+Such procedures are referred to as \emph{map matching} in the literature.
 A simple approximation is to perpendicularly project the vehicle's position onto a series of lines running between each pair of adjacent points in the path (this will be referred to as a {\it link}, and is depicted in Fig. \ref{fig:cartos}).
 Projections which lie outside of the link's two constituent path points are snapped to the nearest one.
 The projection which is closest to the vehicle's actual position is then assumed to be the correct path projection $\mathbf{r}_p$.
@@ -677,7 +679,7 @@ autonomous car controller.
 
 \section{Results} \label{sec:results}
 
-Fig. \ref{fig:results} shows planned speed and acceleration for the second sub-path between the two stop signs in Fig \ref{fig:subpathdivision} (highlighted in green). Overlayed on top are measured values of both quantities, both of which track quite well. Note that they are not smoothed or bias-corrected, thus the acceleration is quite noisy. Relatively high jerk and acceleration are used to compensate for significant damping effects and time constants in the controller. %So we need high error to get the vehicle to move. 
+Fig. \ref{fig:results} shows planned speed and acceleration for the second sub-path between the two stop signs in Fig \ref{fig:subpathdivision} (highlighted in green). Overlayed on top are measured values of both quantities for a single autonomous driving run, both of which track quite well. Note that they are not smoothed or bias-corrected, thus the acceleration is quite noisy. Relatively high jerk and acceleration are used to compensate for significant damping effects and time constants in the controller. %So we need high error to get the vehicle to move. 
 The controller used in this work was originally tuned for interstate driving, so its behavior at low urban speeds has not been optimized leading to noisy acceleration.
 
 \section{Summary} \label{sec:summary}

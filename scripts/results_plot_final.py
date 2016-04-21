@@ -167,8 +167,11 @@ for p1 in fig_2_1, fig_2_2:
 speed_percent_error = []
 
 for k in range(len(veh_v2)):
-  # # if slice_v2[k] > 0:
-  # speed_percent_error.append( abs(veh_v2[k]-slice_v2[k])/slice_v2[k] )
+  if slice_v2[k] > 0:
+    speed_percent_error.append( abs(veh_v2[k]-slice_v2[k])/slice_v2[k] )
+  else:
+    speed_percent_error.append(0)
+pg.plot(veh_s2, speed_percent_error)
 rms_speed_percent_error = np.sqrt(np.mean(np.square(speed_percent_error))) * 100
 print rms_speed_percent_error
 
