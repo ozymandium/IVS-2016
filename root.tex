@@ -42,11 +42,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
-In this paper, we address the problem of trajectory planning for an autonomous car for urban roads while simultaneously reacting to the presence of pedestrians.
+In this paper, we address the problem of trajectory planning while simultaneously reacting to the presence of pedestrians for an autonomous car on urban roads.
 Past work limits jerk, velocities and acceleration for smooth trajectories, without considering reactive behaviors such as responding to pedestrians.
 Other systems based on collision avoidance, plan paths around obstacles and pedestrians in unstructured environments.
 In this paper, we present an integrated trajectory generation and tracking system. % for urban environments. 
-Our system simultaneously considers constraints for smooth trajectory and updates the trajectory in real-time to react to pedestrians on the road. 
+Our system simultaneously considers both parameter and reactive constraints for smooth trajectory and updates it in real-time.
 
 We present a novel online method for planning %longitudinal
 trajectories to follow a given urban path while honoring traffic regulations such as stop signs at intersections. 
@@ -61,11 +61,11 @@ We have confirmed this with a test vehicle and pedestrians with over 100 hours o
 \section{Introduction} \label{sec:introduction}
 
 %When planning trajectories for 
-An autonomous ground vehicle operating on roadways typically plans for trajectories with the goal of minimizing navigation time.
+An autonomous ground vehicle operating on roadways typically plans trajectories with the goal of minimizing navigation time.
 % "path-trajectory" is improper. "path-velocity" is used extensively in the literature.
-It is common to employ the path-velocity decomposition to separate the twin tasks of Path and Trajectory Planning, so that these tasks can be run sequentially or in parallel.
+It is common to employ a path-velocity decomposition to separate the twin tasks of Path and Trajectory Planning, so that these tasks can be run sequentially or in parallel.
 % (i.e., path planning is performed prior to planning the speed that the vehicle will take along the chosen path).
-{\it Path Planning} involves computation of the optimal path and {\it Trajectory Planning} involves the computation of a time-parameterized velocity profile appropriate for the scenario.
+{\it Path Planning} computes the optimal path while {\it Trajectory Planning} computes a time-parameterized velocity profile appropriate for the scenario.
 
 Trajectory computation for traveling on the path is often guided by passenger comfort. 
 For human passengers, it is widely believed that high levels of jerk (time derivative of acceleration) and high acceleration and velocity values are prime contributors to ride discomfort.
@@ -76,7 +76,7 @@ Similar work performed by Bianco et al \cite{GuarinoLoBianco2004,GuarinoLoBianco
 Other work on optimizing these constraints on urban roads ~\cite{Rastelli14,Li15} doesn't consider reactive behaviors such as responding to pedestrians and other dynamic objects in the scene.
 
 The set of possible paths to the destination is typically restricted
-by constraints such as available travel lanes, and obstacles such as pedestrians.
+by constraints such as available travel lanes, and obstacles including pedestrians.
 Many systems in the literature plan paths around pedestrians, stop for them, or produce a warning ~\cite{pradalier05,benenson06,gu14,mogelmose15,johnson13}. 
 %However, these systems do not work as part of an integrated system that navigates urban roads.
 These systems make an assumption that alternative paths around obstacles are available. Such an assumption may not always be valid in an urban scenario.
@@ -86,9 +86,9 @@ In this paper, we describe a trajectory generation system that satisfies the con
 %There has also been some work in simulating vehicles and modeling uncertainty, but pedestrians are less predictable than cars 
 %and can appear suddenly on the road (when someone is jaywalking for example).
 
-We would like our autonomous car to travel autonomously from start to destination while honoring traffic laws and avoiding pedestrians on the roadway.
+Our autonomous car should travel autonomously from start to destination while honoring traffic laws and avoiding pedestrians on the roadway.
 %Desired behavior from the car includes following traffic laws at the intersections such as stop signs.
-At stop signs, our autonomous car should stop and wait for an appropriate amount of time.
+At stop signs, it should stop and wait for an appropriate amount of time.
 The car should also stop, slow down for pedestrians %when appropriate.It should react to pedestrians 
 at the intersections as well as jay walking pedestrians.
 Further, the pedestrians can be static or moving.
@@ -103,13 +103,13 @@ Pedestrians on the sidewalks should be ignored by the car.
   \label{fig:car}
 \end{figure}
 
-We present a deterministic autonomy framework for pedestrian-aware ground vehicles with a novel method for planning longitudinal trajectories 
+In this paper, we present a deterministic autonomy framework for pedestrian-aware ground vehicles with a novel method for planning longitudinal trajectories. 
 %(the time derivatives of position in the body-forward direction) 
-along the desired path. %without requiring prior knowledge of travel time.
-Our method segments the path using a set of kinematic or dynamic constraints.
+%along the desired path. %without requiring prior knowledge of travel time.
+Our method segments the path using both kinematic and dynamic constraints.
 Each segment is then planned sequentially by choosing a piecewise constant jerk profile.
 We intelligently choose a jerk profile from a set of analytically solved profiles such that acceleration is continuous and within limits throughout the entire path.
-The resultant trajectory plan is then sampled to provide a reference for real-time vehicle control. %, which is called trajectory tracking. In urban environments, modifying the vehicle's intended path is often not possible. 
+The resultant trajectory plan is sampled to provide a reference for real-time vehicle control. %, which is called trajectory tracking. In urban environments, modifying the vehicle's intended path is often not possible. 
 % We are not doing control or tracking control. We're doing tracking.
 %We revise the trajectory plan online to safely avoid pedestrians by slowing down or stopping. % when no alternative paths are available.
 
@@ -119,8 +119,8 @@ exhibit reactive behavior and stop for pedestrians on the road.
 Section \ref{sec:trajectoryplanning} describes trajectory planning to generate a trajectory that satisfies maximum velocity, acceleration and jerk constraints. 
 %We explain how we pass through intersections, turns in the road and planned stops at the stop signs.
 %We then describe extensions to trajectory planner that handle reactivity to pedestrians in the environment. 
-Once the trajectory plan is formulated, we send the reference signal to the controllers that govern steering, braking, and engine speed.
-This is the trajectory tracking and is discussed in Section \ref{sec:trajectorytracking},
+Once the trajectory is formulated, we send the reference signal to the controllers that govern steering, braking, and engine speed.
+This is trajectory tracking and is discussed in Section \ref{sec:trajectorytracking},
 followed by results and conclusions.
 % tracking
 
@@ -129,15 +129,14 @@ followed by results and conclusions.
 
 \section{System Architecture} \label{sec:systemarchirecture}
 
-Our system architecture is shown in Figure \ref{fig:addreact}. We have three major components: a High-Level Planner, a Low-Level Planner, and a Software Controller.
-
-The High-Level Planner is referred to as the {\it Path Manager}, and performs decision-making as well as governs operation of the low-level planner.
+Our system architecture is shown in Figure \ref{fig:addreact}. We have three major components: a High-Level Planner, a Low-Level Planner, and a Software Controller. The High-Level Planner is referred to as the {\it Path Manager}, and performs decision-making as well as governs operation of the low-level planner.
 Its primary functions are:
 \begin{itemize}
   \item Stop the vehicle at stop signs and wait until the associated intersection is clear before continuing.
   \item Reactively reduce speed or stop altogether for pedestrians which pose a collision risk, then continue when they are clear.
   \item Govern the Trajectory Planner.
 \end{itemize}
+
 The Low-Level Planner is also referred to as the {\it Trajectory Planner}, and is responsible for quantifying the actions dictated by the Path Manager.
 Its primary functions are:
 \begin{itemize}
@@ -149,7 +148,7 @@ Its primary functions are:
 The Software Controller governs engine speed, braking, and steering.
 It takes as an input a trajectory sampled at 10 Hz spanning 2 seconds, beginning at the moment of data transmission.
 This short-term trajectory is oriented in the vehicle body frame.
-This paper focuses on the Path Manager (Sec. \ref{sec:pathmanager}) and the Trajectory Planner (Sec. \ref{sec:trajectoryplanning} \& Sec. \ref{sec:trajectorytracking}).
+This paper focuses on the Path Manager (Sec. \ref{sec:pathmanager}) and the Trajectory Planner (Sec. \ref{sec:trajectoryplanning} and Sec. \ref{sec:trajectorytracking}).
 
 
 Beyond these major components, our system has four primary input components: Navigation Filtering, Pedestrian Detection, a Path Planner, and a Map.
@@ -187,7 +186,7 @@ We assume access to a lane level Path Planner. For example, this can be a servic
 We assume that the path planner operates independently from the trajectory planner and tracker.
 %The destination is manually input into the system by the passengers.
 Using the path planner, we obtain a path along lane centers from the vehicle's current location (computed by the navigation filter) to the user specified destination.
-This plan is then output as a set of global waypoints.
+This plan is output as a set of global waypoints.
 
 
 %\begin{figure}[thpb]
@@ -245,7 +244,7 @@ Mapping back to Cartesian coordinates (necessary for trajectory tracking) is wel
 Our Path Manager is implemented as a discrete state machine, depicted in Fig. \ref{fig:st}.
 %Each of the states is described below.
 In the absence of pedestrians, the path manager cycles between NORMAL and PSTOP states.
-In NORMAL state, the path manager sends the first subpath to the trajectory planner, which then plans and executes it before coming to a stop at the end of the subpath.
+In NORMAL state, the path manager sends the first subpath to the trajectory planner, which then plans and executes it, coming to a stop at the end of the subpath.
 In PSTOP mode, the path manager waits for a pre-set time duration before returning to NORMAL mode, where the next subpath is executed.
 When pedestrians are present, the transition from PSTOP to NORMAL is delayed until no pedestrians are detected in the range denoted by $\Delta s_{resume}$ as shown in Fig. \ref{fig:react}(c).
 
@@ -259,13 +258,13 @@ When pedestrians are present, the transition from PSTOP to NORMAL is delayed unt
   \label{fig:subpathdivision}
 \end{figure}
 
-All detected pedestrian locations are compared against the high-resolution digital map. Pedestrians that are off roadway are not considered.
+All detected pedestrian locations are compared against the high-resolution digital map. Off road pedestrians are not considered.
 Each pedestrian location is perpendicularly projected onto the path to determine the travel distance separating them from the car.
 Pedestrians that are on a different subpath than the vehicle, or behind the vehicle are disregarded (i.e., $s_{ped} < s_{veh}$).
-All the remaining pedestrians pose potential collision risks. However, only the closest pedestrian is considered for RSTOP.
+All the remaining pedestrians pose potential collision risk. However, only the closest pedestrian is considered for RSTOP.
 
 The distinction between momentarily braking for a pedestrian that quickly leaves the roadway and coming to a full stop needs no separate logic.
-They follow the same state transition, and since all trajectory plans are smooth, riders are rarely aware that any change took place.
+They follow the same state transition, and since all trajectory plans are smooth, riders are rarely aware of the change.
 There is a brief waiting period before resuming NORMAL mode from RSTOP to ensure no tracking errors in pedestrian detection.
 
 \begin{figure}[tb]
@@ -335,7 +334,7 @@ For instance, acceleration constraints may include a set of limits derived from 
 
 % How we actually did this.
 For the purposes of developing a simple example application, two constraints are used for $v_{m}$: legal speed limit $SL$ and lateral acceleration limit $a_{y}^{max}$. 
-Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation :
+Lateral acceleration constraints are translated into longitudinal speed constraints using the approximation:
 \begin{equation}
   v_{m,w}(a_{y}) = \sqrt{ | a_{y}^{max} / \kappa_{w} | } ~,~ w = 1, ..., W
 \end{equation}
@@ -670,7 +669,7 @@ autonomous car controller.
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=0.65\columnwidth]{graphics/results_final.png}
+  \includegraphics[width=0.7\columnwidth]{graphics/results_final.png}
   \caption{Planned speed and longitudinal acceleration vs. measured values}
 
   \label{fig:results}
@@ -690,14 +689,14 @@ The controller used in this work was originally tuned for interstate driving, so
 In this paper, we have presented a novel real-time method for planning longitudinal trajectories in an autonomous car to follow an urban path with online updates to avoid pedestrians on the roadway by slowing down or stopping.
 We built a robust stopping model as part of Trajectory Planner reliably integrated with the Path Manager.
 We can travel along a desired path, stop at stop signs, stop for pedestrians in the roadway, and continue after they leave.
-Our system gracefully handles complex cases that were not explicitly programmed, such as following pedestrians if they continue walking on the road away from the car. 
-Our system works with multiple pedestrians as we only need to consider the closest pedestrian ahead of us. 
+Our system gracefully handles complex cases that were not explicitly programmed, such as follow pedestrians if they continue walking on the road away from the car. 
+Our system works with multiple pedestrians as we only react to the closest pedestrian ahead of us. 
 
 We make three contributions in this paper. First, we present an integrated trajectory planner that
 simultaneously limits jerk, velocity and acceleration to pre-set desired values while being responsive 
 to the presence of pedestrians.
 Second, our trajectory planner has closed form solution and is suitable for online implementation
-on a car, unlike systems requiring solutions to nonlinear optimizations. Finally, we have confirmed the
+on a car, unlike systems requiring solutions to nonlinear optimizations. Finally, we have confirm the
 efficiency and reliability of our trajectory planner on a test vehicle with over 100 hours of testing
 under fully autonomous driving conditions on urban roads with pedestrians in random locations. 
 
